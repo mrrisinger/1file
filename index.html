@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projects</title>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --surface-hover: #212121;
+      --border: #2a2a2a;
+      --text: #e0e0e0;
+      --text-muted: #888;
+      --accent: #f0c040;
+      --game: #2a9d8f;
+      --utility: #4a9eff;
+      --work-tool: #f0a040;
+      --fitness: #a070e0;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 3rem 2rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    header p {
+      margin-top: 0.35rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem 4rem;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 1.75rem;
+    }
+
+    .search-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      flex: 1 1 auto;
+    }
+
+    .sort-group {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    input, select, button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-family: inherit;
+      padding: 0.45rem 0.75rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, select:focus { border-color: #555; }
+
+    input[type="search"] { min-width: 200px; flex: 1 1 auto; }
+
+    select { cursor: pointer; }
+
+    button {
+      cursor: pointer;
+      padding: 0.45rem 0.65rem;
+      font-size: 1rem;
+      line-height: 1;
+      user-select: none;
+    }
+
+    button:hover { background: var(--surface-hover); border-color: #555; }
+
+    /* Grid */
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      border-color: #3a3a3a;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .card-title:hover { color: var(--accent); }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 2px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .badge[data-category="game"]      { background: rgba(42,157,143,0.2); color: var(--game); }
+    .badge[data-category="utility"]   { background: rgba(74,158,255,0.2); color: var(--utility); }
+    .badge[data-category="work-tool"] { background: rgba(240,160,64,0.2); color: var(--work-tool); }
+    .badge[data-category="fitness"]   { background: rgba(160,112,224,0.2); color: var(--fitness); }
+
+    .card-desc {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      flex: 1;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-top: auto;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      color: #666;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+
+    .card-date {
+      font-size: 0.75rem;
+      color: #555;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Messages */
+    #empty-msg, #error-msg {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    #error-msg { color: #e05050; }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #444;
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 520px) {
+      header { padding: 2rem 1rem 1.5rem; }
+      main { padding: 1.25rem 1rem 3rem; }
+      .project-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Projects</h1>
+    <p>A portfolio of tools, games, and utilities — brought to you by <strong>2357 Studios</strong>.</p>
+  </header>
+
+  <main>
+    <div class="controls">
+      <div class="search-group">
+        <input id="search" type="search" placeholder="Search projects…" autocomplete="off">
+        <select id="category-filter">
+          <option value="">All categories</option>
+        </select>
+      </div>
+      <div class="sort-group">
+        <select id="sort-by">
+          <option value="created">Date Created</option>
+          <option value="name">Name (A–Z)</option>
+          <option value="updated">Last Updated</option>
+        </select>
+        <button id="sort-dir" title="Toggle sort direction">↓</button>
+      </div>
+    </div>
+
+    <div id="grid" class="project-grid"></div>
+    <p id="empty-msg" hidden>No projects found.</p>
+    <p id="error-msg" hidden>Could not load projects. Make sure you are running this over HTTP (not file://).</p>
+  </main>
+
+  <footer>Brought to you by <strong style="color:#666">2357 Studios</strong></footer>
+
+  <script>
+    const state = {
+      projects: [],
+      search: '',
+      category: '',
+      sortBy: 'created',
+      sortDir: 'desc'
+    };
+
+    function formatDate(iso) {
+      return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', {
+        year: 'numeric', month: 'short', day: 'numeric'
+      });
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function buildCard(p) {
+      const tags = (p.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+      return `
+        <article class="card">
+          <div class="card-header">
+            <a class="card-title" href="${escapeHtml(p.url)}">${escapeHtml(p.name)}</a>
+            <span class="badge" data-category="${escapeHtml(p.category)}">${escapeHtml(p.category)}</span>
+          </div>
+          <p class="card-desc">${escapeHtml(p.description)}</p>
+          <div class="card-footer">
+            <div class="card-tags">${tags}</div>
+            <time class="card-date" datetime="${escapeHtml(p.created)}">${formatDate(p.created)}</time>
+          </div>
+        </article>`;
+    }
+
+    function render() {
+      const q = state.search.toLowerCase();
+
+      let list = state.projects.filter(p => {
+        if (state.category && p.category !== state.category) return false;
+        if (q) {
+          const haystack = [p.name, p.description, ...(p.tags || [])].join(' ').toLowerCase();
+          if (!haystack.includes(q)) return false;
+        }
+        return true;
+      });
+
+      list.sort((a, b) => {
+        let va, vb;
+        if (state.sortBy === 'name') {
+          va = a.name.toLowerCase();
+          vb = b.name.toLowerCase();
+          return state.sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        } else {
+          va = state.sortBy === 'updated' ? (a.updated || a.created) : a.created;
+          vb = state.sortBy === 'updated' ? (b.updated || b.created) : b.created;
+          return state.sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        }
+      });
+
+      const grid = document.getElementById('grid');
+      const emptyMsg = document.getElementById('empty-msg');
+
+      if (list.length === 0) {
+        grid.innerHTML = '';
+        emptyMsg.hidden = false;
+      } else {
+        emptyMsg.hidden = true;
+        grid.innerHTML = list.map(buildCard).join('');
+      }
+    }
+
+    function populateCategories() {
+      const categories = [...new Set(state.projects.map(p => p.category))].sort();
+      const select = document.getElementById('category-filter');
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+    }
+
+    async function init() {
+      try {
+        const res = await fetch('projects.json');
+        if (!res.ok) throw new Error(res.statusText);
+        state.projects = await res.json();
+        populateCategories();
+        render();
+      } catch (e) {
+        document.getElementById('error-msg').hidden = false;
+      }
+    }
+
+    document.getElementById('search').addEventListener('input', e => {
+      state.search = e.target.value.trim();
+      render();
+    });
+
+    document.getElementById('category-filter').addEventListener('change', e => {
+      state.category = e.target.value;
+      render();
+    });
+
+    document.getElementById('sort-by').addEventListener('change', e => {
+      state.sortBy = e.target.value;
+      render();
+    });
+
+    document.getElementById('sort-dir').addEventListener('click', () => {
+      state.sortDir = state.sortDir === 'desc' ? 'asc' : 'desc';
+      document.getElementById('sort-dir').textContent = state.sortDir === 'desc' ? '↓' : '↑';
+      render();
+    });
+
+    init();
+  </script>
+</body>
+</html>

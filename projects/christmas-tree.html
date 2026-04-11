@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Christmas Tree — Reaction Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #080808;
+    --surface: #0e0e0e;
+    --border: #1e1e1e;
+    --text: #e8e8e0;
+    --muted: #aaaaaa;
+    --dim: #666666;
+    --amber: #ff8c00;
+    --green: #00e05a;
+    --red: #ff1a1a;
+    --yellow: #ffd000;
+    --pro: #ef4444;
+    --sport: #f59e0b;
+    --superpro: #22d3ee;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* ─── MENU ─── */
+  #menu {
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, #1a0800 0%, var(--bg) 65%);
+  }
+  .menu-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 5px;
+    color: var(--amber);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .menu-title {
+    font-family: var(--font-display);
+    font-size: clamp(52px, 14vw, 80px);
+    color: #fff;
+    line-height: 0.9;
+    text-align: center;
+    text-shadow: 0 0 60px rgba(255,140,0,0.3);
+    margin-bottom: 4px;
+  }
+  .menu-sub {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 36px;
+  }
+  .mode-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 440px;
+    margin-bottom: 32px;
+  }
+  .mode-btn {
+    position: relative;
+    padding: 14px 10px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    overflow: hidden;
+  }
+  .mode-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+    border-radius: 8px;
+  }
+  .mode-btn.selected { border-color: var(--mode-color); background: color-mix(in srgb, var(--mode-color) 10%, var(--surface)); }
+  .mode-btn.selected::before { opacity: 1; }
+  .mode-btn.selected .mode-name { color: var(--mode-color); }
+  .mode-name {
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: 1px;
+    color: #888;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .mode-detail {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: #777;
+    display: block;
+    line-height: 1.4;
+  }
+  .mode-btn.selected .mode-detail { color: #bbb; }
+
+  .start-btn {
+    font-family: var(--font-display);
+    font-size: 28px;
+    letter-spacing: 4px;
+    padding: 16px 60px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    color: #000;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+  }
+  .start-btn:active { transform: scale(0.97); }
+
+  .records-link {
+    margin-top: 16px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 24px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: color 0.15s;
+  }
+  .records-link:hover { color: var(--text); }
+
+  /* ─── RACE ─── */
+  #race {
+    cursor: pointer;
+    gap: 0;
+  }
+  .race-mode-label {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .tree-wrap {
+    position: relative;
+  }
+  .tree-panel {
+    background: #0a0a0a;
+    border-radius: 20px;
+    border: 2px solid #1a1a1a;
+    padding: 24px 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 0 80px rgba(0,0,0,0.9), inset 0 1px 0 #222;
+    position: relative;
+  }
+  .tree-panel::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 21px;
+    background: linear-gradient(180deg, #2a2a2a 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .bulb-row {
+    display: flex;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+  .bulb {
+    border-radius: 50%;
+    transition: background 0.04s, box-shadow 0.04s, border-color 0.04s;
+    flex-shrink: 0;
+  }
+  .divider {
+    width: 80%;
+    height: 1px;
+    background: #181818;
+    position: relative;
+    z-index: 1;
+  }
+  .tree-status {
+    margin-top: 28px;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: #888;
+    text-transform: uppercase;
+    text-align: center;
+    height: 18px;
+    transition: color 0.1s;
+  }
+  .tree-hint {
+    margin-top: 12px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #666;
+  }
+
+  /* ─── RESULT ─── */
+  #result {
+    gap: 0;
+  }
+  .result-grade {
+    font-family: var(--font-display);
+    font-size: 14px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .result-time {
+    font-family: var(--font-display);
+    font-size: clamp(72px, 20vw, 110px);
+    line-height: 1;
+    color: #fff;
+    margin-bottom: 4px;
+    text-shadow: 0 0 40px rgba(255,255,255,0.1);
+  }
+  .result-unit {
+    font-size: 0.25em;
+    color: var(--muted);
+    vertical-align: baseline;
+    margin-left: 4px;
+  }
+  .result-pb {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--green);
+    margin-bottom: 16px;
+    height: 18px;
+  }
+  .result-meta {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+  .result-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  .btn-primary {
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 3px;
+    padding: 14px 44px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #000;
+    transition: transform 0.1s;
+  }
+  .btn-primary:active { transform: scale(0.96); }
+  .btn-ghost {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 14px 24px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .btn-ghost:active { color: var(--text); }
+
+  .mini-lb {
+    width: 100%;
+    max-width: 280px;
+  }
+  .mini-lb-header {
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: #888;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .mini-lb-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid #1e1e1e;
+    font-size: 13px;
+  }
+  .lb-rank { color: #666; width: 24px; }
+  .lb-time { color: #aaa; }
+  .lb-time.highlight { color: #fff; }
+  .lb-badge { font-size: 9px; letter-spacing: 1px; color: #777; }
+
+  /* foul result */
+  .foul-icon { font-size: 72px; margin-bottom: 8px; }
+  .foul-label { font-family: var(--font-display); font-size: 48px; letter-spacing: 4px; color: var(--red); text-shadow: 0 0 40px rgba(255,26,26,0.5); margin-bottom: 4px; }
+  .foul-sub { font-size: 11px; letter-spacing: 2px; color: var(--muted); margin-bottom: 40px; }
+
+  /* ─── LEADERBOARD ─── */
+  #leaderboard {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    justify-content: flex-start;
+    padding-top: 52px;
+    padding-bottom: 40px;
+    gap: 0;
+    background: radial-gradient(ellipse 80% 40% at 50% 0%, #0a0010 0%, var(--bg) 55%);
+  }
+  .lb-title {
+    font-family: var(--font-display);
+    font-size: 40px;
+    letter-spacing: 4px;
+    margin-bottom: 32px;
+    text-align: center;
+  }
+  .lb-section {
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 28px;
+  }
+  .lb-section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+  }
+  .lb-section-name {
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 2px;
+  }
+  .lb-section-sub {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #888;
+  }
+  .lb-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 4px;
+    border-bottom: 1px solid #1a1a1a;
+    font-size: 14px;
+  }
+  .lb-entry-rank { color: #666; width: 28px; font-size: 11px; }
+  .lb-entry-time { color: #bbb; }
+  .lb-entry-time.gold { color: #ffd000; }
+  .lb-entry-rating { font-size: 10px; color: #777; letter-spacing: 1px; }
+  .lb-empty { font-size: 12px; color: #555; padding: 8px 0; }
+  .lb-back { margin-top: 12px; }
+  .lb-clear { margin-top: 12px; font-size: 10px; color: #555; background: none; border: 1px solid #222; border-radius: 8px; padding: 8px 20px; cursor: pointer; font-family: var(--font-mono); letter-spacing: 2px; }
+
+  /* ─── FLASH OVERLAYS ─── */
+  .flash-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.05s;
+    z-index: 100;
+  }
+  .flash-overlay.go { background: radial-gradient(ellipse at center, rgba(0,224,90,0.25) 0%, transparent 70%); }
+  .flash-overlay.red { background: radial-gradient(ellipse at center, rgba(255,26,26,0.35) 0%, transparent 70%); }
+  .flash-overlay.show { opacity: 1; }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes pulse-green {
+    0%, 100% { box-shadow: 0 0 24px 8px rgba(0,224,90,0.6); }
+    50% { box-shadow: 0 0 40px 16px rgba(0,224,90,0.9); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+  .shake { animation: shake 0.35s ease; }
+  @keyframes count-in {
+    from { transform: scale(1.4); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .count-in { animation: count-in 0.15s ease; }
+</style>
+  <style>
+    .home-nav { position: fixed; top: 0; left: 0; z-index: 9999; padding: 6px 14px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-bottom-right-radius: 8px; }
+    .home-nav a { color: rgba(255,255,255,0.75); text-decoration: none;
+      font-family: monospace; font-size: 0.8rem; letter-spacing: 0.06em; }
+    .home-nav a:hover { color: #fff; }
+    .studios-credit { position: fixed; bottom: 0; right: 0; z-index: 9999; padding: 5px 12px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-top-left-radius: 8px;
+      font-family: monospace; font-size: 0.7rem; color: rgba(255,255,255,0.4);
+      letter-spacing: 0.05em; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <nav class="home-nav"><a href="../index.html">&#8592; Projects</a></nav>
+  <div class="studios-credit">2357 Studios</div>
+
+<!-- Flash overlay -->
+<div class="flash-overlay go" id="flashGo"></div>
+<div class="flash-overlay red" id="flashRed"></div>
+
+<!-- ═══════════════ MENU ═══════════════ -->
+<div class="screen active" id="menu">
+  <div class="menu-eyebrow">NHRA Style</div>
+  <div class="menu-title">CHRISTMAS<br>TREE</div>
+  <div class="menu-sub">REACTION TIME TRAINER</div>
+
+  <div class="mode-grid">
+    <button class="mode-btn selected" data-mode="sportsman" style="--mode-color: var(--sport);" onclick="selectMode('sportsman', this)">
+      <span class="mode-name">SPORT</span>
+      <span class="mode-detail">Sequential<br>0.500s</span>
+    </button>
+    <button class="mode-btn" data-mode="pro" style="--mode-color: var(--pro);" onclick="selectMode('pro', this)">
+      <span class="mode-name">PRO</span>
+      <span class="mode-detail">Simultaneous<br>0.400s</span>
+    </button>
+    <button class="mode-btn" data-mode="superpro" style="--mode-color: var(--superpro);" onclick="selectMode('superpro', this)">
+      <span class="mode-name">SUPER</span>
+      <span class="mode-detail">Sequential<br>0.400s</span>
+    </button>
+  </div>
+
+  <button class="start-btn" id="startBtn" onclick="beginRace()">STAGE UP</button>
+  <button class="records-link" onclick="showLeaderboard()">VIEW RECORDS</button>
+  <div style="position:absolute; bottom:20px; font-size:10px; letter-spacing:2px; color:#333; font-family:var(--font-mono);">Brought to you by 2357 Studios</div>
+</div>
+
+<!-- ═══════════════ RACE ═══════════════ -->
+<div class="screen" id="race" onclick="handleReact()">
+  <div class="race-mode-label" id="raceModeLabel">SPORTSMAN</div>
+
+  <div class="tree-wrap">
+    <div class="tree-panel" id="treePanel">
+      <!-- Pre-stage row -->
+      <div class="bulb-row" id="rowPrestage">
+        <div class="bulb" id="ps1" style="width:26px;height:26px;"></div>
+        <div class="bulb" id="ps2" style="width:26px;height:26px;"></div>
+      </div>
+      <!-- Stage row -->
+      <div class="bulb-row" id="rowStage">
+        <div class="bulb" id="st1" style="width:26px;height:26px;"></div>
+        <div class="bulb" id="st2" style="width:26px;height:26px;"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Amber 1 -->
+      <div class="bulb-row">
+        <div class="bulb" id="am1" style="width:54px;height:54px;"></div>
+      </div>
+      <!-- Amber 2 -->
+      <div class="bulb-row">
+        <div class="bulb" id="am2" style="width:54px;height:54px;"></div>
+      </div>
+      <!-- Amber 3 -->
+      <div class="bulb-row">
+        <div class="bulb" id="am3" style="width:54px;height:54px;"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Green -->
+      <div class="bulb-row">
+        <div class="bulb" id="grn" style="width:60px;height:60px;"></div>
+      </div>
+      <!-- Red foul -->
+      <div class="bulb-row">
+        <div class="bulb" id="rfl" style="width:44px;height:44px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tree-status" id="treeStatus"></div>
+  <div class="tree-hint" id="treeHint">TAP SCREEN WHEN GREEN</div>
+</div>
+
+<!-- ═══════════════ RESULT ═══════════════ -->
+<div class="screen" id="result">
+  <!-- Normal result -->
+  <div id="resultNormal">
+    <div class="result-grade" id="resultGrade"></div>
+    <div class="result-time" id="resultTime"></div>
+    <div class="result-pb" id="resultPb"></div>
+    <div class="result-meta" id="resultMeta"></div>
+  </div>
+  <!-- Foul result -->
+  <div id="resultFoul" style="display:none; text-align:center;">
+    <div class="foul-icon">🔴</div>
+    <div class="foul-label">RED LIGHT</div>
+    <div class="foul-sub" id="foulSub">FOUL — NOT RECORDED</div>
+  </div>
+
+  <div class="result-actions">
+    <button class="btn-primary" id="resultRunAgain" onclick="beginRace()">RUN AGAIN</button>
+    <button class="btn-ghost" onclick="showScreen('menu')">MENU</button>
+  </div>
+
+  <div class="mini-lb" id="miniLb"></div>
+</div>
+
+<!-- ═══════════════ LEADERBOARD ═══════════════ -->
+<div class="screen" id="leaderboard">
+  <div class="lb-title">RECORDS</div>
+  <div id="lbContent" style="width:100%; max-width:420px;"></div>
+  <button class="btn-ghost lb-back" onclick="showScreen('menu')">← BACK TO MENU</button>
+  <button class="lb-clear" onclick="clearRecords()">CLEAR ALL RECORDS</button>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const MODES = {
+  sportsman: {
+    id: 'sportsman',
+    label: 'SPORTSMAN',
+    sub: '0.500s apart · +0.500s to green',
+    interval: 500,
+    greenDelay: 500,
+    simultaneous: false,
+    color: '#f59e0b',
+    desc: 'Street, bracket & non-pro events',
+  },
+  pro: {
+    id: 'pro',
+    label: 'PRO TREE',
+    sub: 'simultaneous · +0.400s to green',
+    interval: 400,
+    greenDelay: 400,
+    simultaneous: true,
+    color: '#ef4444',
+    desc: 'Top Fuel, Funny Car, Pro Stock',
+  },
+  superpro: {
+    id: 'superpro',
+    label: 'SUPER PRO',
+    sub: '0.400s apart · +0.400s to green',
+    interval: 400,
+    greenDelay: 400,
+    simultaneous: false,
+    color: '#22d3ee',
+    desc: 'Super Pro & Top Sportsman classes',
+  },
+};
+
+const GRADES = [
+  { max: 0.050, label: 'PERFECT',  grade: 'A+', color: '#a855f7' },
+  { max: 0.100, label: 'ELITE',    grade: 'A',  color: '#22c55e' },
+  { max: 0.200, label: 'PRO',      grade: 'B',  color: '#3b82f6' },
+  { max: 0.350, label: 'DECENT',   grade: 'C',  color: '#6b7280' },
+  { max: 9999,  label: 'SLOW',     grade: 'D',  color: '#444'    },
+];
+
+const STORAGE_KEY = 'xmas-tree-v2';
+const TOP_N = 5;
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let currentMode = 'sportsman';
+let phase = 'idle'; // idle | staging | countdown | go | done
+let goTimestamp = null;
+let timers = [];
+
+// ─── STORAGE ─────────────────────────────────────────────────────────────────
+function loadLB() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch { return {}; }
+}
+function saveLB(lb) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(lb)); } catch {}
+}
+function addEntry(modeId, entry) {
+  const lb = loadLB();
+  if (!lb[modeId]) lb[modeId] = [];
+  if (!entry.foul) {
+    lb[modeId].push(entry);
+    lb[modeId].sort((a, b) => a.rt - b.rt);
+    lb[modeId] = lb[modeId].slice(0, TOP_N);
+  } else {
+    // Store foul separately for display but not in ranked list
+    if (!lb[modeId + '_fouls']) lb[modeId + '_fouls'] = 0;
+    lb[modeId + '_fouls']++;
+  }
+  saveLB(lb);
+  return lb;
+}
+
+// ─── BULB RENDERING ──────────────────────────────────────────────────────────
+const BULB_OFF = (c) => `background:#141414; box-shadow:inset 0 2px 6px rgba(0,0,0,0.7); border:2px solid #1e1e1e;`;
+const BULB_ON  = (c) => `background:${c}; box-shadow:0 0 28px 10px ${c}66, 0 0 60px 20px ${c}33; border:2px solid ${c};`;
+
+function setBulb(id, on, color) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.cssText += on ? BULB_ON(color) : BULB_OFF(color);
+}
+
+function resetTree() {
+  ['ps1','ps2','st1','st2'].forEach(id => setBulb(id, false, '#ffd000'));
+  ['am1','am2','am3'].forEach(id => setBulb(id, false, '#ff8c00'));
+  setBulb('grn', false, '#00e05a');
+  setBulb('rfl', false, '#ff1a1a');
+}
+
+// ─── TIMER HELPERS ────────────────────────────────────────────────────────────
+function addTimer(fn, delay) {
+  const id = setTimeout(fn, delay);
+  timers.push(id);
+  return id;
+}
+function clearTimers() {
+  timers.forEach(clearTimeout);
+  timers = [];
+}
+
+// ─── FLASH ────────────────────────────────────────────────────────────────────
+function flash(type, duration = 250) {
+  const el = document.getElementById(type === 'go' ? 'flashGo' : 'flashRed');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ─── SCREEN NAV ──────────────────────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+}
+
+// ─── MODE SELECT ─────────────────────────────────────────────────────────────
+function selectMode(id, btn) {
+  currentMode = id;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const m = MODES[id];
+  const sb = document.getElementById('startBtn');
+  sb.style.background = m.color;
+  sb.style.boxShadow = `0 0 40px ${m.color}55`;
+}
+
+// Init start button color
+(function() {
+  const m = MODES[currentMode];
+  const sb = document.getElementById('startBtn');
+  sb.style.background = m.color;
+  sb.style.boxShadow = `0 0 40px ${m.color}55`;
+})();
+
+// ─── STATUS TEXT ─────────────────────────────────────────────────────────────
+function setStatus(text, color) {
+  const el = document.getElementById('treeStatus');
+  el.textContent = text;
+  el.style.color = color || '#888';
+}
+
+// ─── RACE SEQUENCE ───────────────────────────────────────────────────────────
+function beginRace() {
+  const m = MODES[currentMode];
+  showScreen('race');
+  resetTree();
+  phase = 'idle';
+  goTimestamp = null;
+  clearTimers();
+
+  document.getElementById('raceModeLabel').textContent = m.label;
+  document.getElementById('raceModeLabel').style.color = m.color;
+  setStatus('STAGING...', '#888');
+  document.getElementById('treeHint').style.color = '#666';
+
+  // Random delay before staging (0.8–1.6s)
+  const stageDelay = 800 + Math.random() * 800;
+
+  addTimer(() => {
+    // Pre-stage — arm foul detection from here onward
+    ['ps1','ps2'].forEach(id => setBulb(id, true, '#ffd000'));
+    phase = 'staging';
+    setStatus('PRE-STAGE', '#777');
+  }, stageDelay);
+
+  addTimer(() => {
+    // Stage
+    ['st1','st2'].forEach(id => setBulb(id, true, '#ffd000'));
+    setStatus('STAGED', '#999');
+  }, stageDelay + 500);
+
+  // Additional random pause before ambers (0.5–1.2s — authentic tree feel)
+  const amberDelay = stageDelay + 500 + 500 + Math.random() * 700;
+
+  if (m.simultaneous) {
+    // PRO TREE: all three ambers fire at once, green 0.400s later
+    addTimer(() => {
+      ['am1','am2','am3'].forEach(id => setBulb(id, true, '#ff8c00'));
+      phase = 'countdown';
+      setStatus('⚡ GET READY', '#ccc');
+      document.getElementById('treeHint').style.color = '#888';
+    }, amberDelay);
+
+    addTimer(() => {
+      const t = performance.now();
+      ['am1','am2','am3'].forEach(id => setBulb(id, false, '#ff8c00'));
+      setBulb('grn', true, '#00e05a');
+      goTimestamp = t;
+      phase = 'go';
+      setStatus('GO!', '#00e05a');
+      flash('go');
+      document.getElementById('grn').style.animation = 'pulse-green 0.5s ease infinite';
+      addTimer(() => { if (phase === 'go') finishRace(2.000, false); }, 2000);
+    }, amberDelay + m.greenDelay);
+
+  } else {
+    // SEQUENTIAL: stagger ambers at mode interval, green after one more interval
+    addTimer(() => {
+      setBulb('am1', true, '#ff8c00');
+      phase = 'countdown';
+      setStatus('⚡ GET READY', '#ccc');
+      document.getElementById('treeHint').style.color = '#888';
+    }, amberDelay);
+
+    addTimer(() => {
+      setBulb('am2', true, '#ff8c00');
+    }, amberDelay + m.interval);
+
+    addTimer(() => {
+      setBulb('am3', true, '#ff8c00');
+    }, amberDelay + m.interval * 2);
+
+    addTimer(() => {
+      const t = performance.now();
+      ['am1','am2','am3'].forEach(id => setBulb(id, false, '#ff8c00'));
+      setBulb('grn', true, '#00e05a');
+      goTimestamp = t;
+      phase = 'go';
+      setStatus('GO!', '#00e05a');
+      flash('go');
+      document.getElementById('grn').style.animation = 'pulse-green 0.5s ease infinite';
+      addTimer(() => { if (phase === 'go') finishRace(2.000, false); }, 2000);
+    }, amberDelay + m.interval * 2 + m.greenDelay);
+  }
+}
+
+// ─── REACT HANDLER ───────────────────────────────────────────────────────────
+function handleReact() {
+  if (phase === 'idle') return; // before pre-stage lights — dead zone, ignore
+
+  if (phase === 'staging' || phase === 'countdown') {
+    // Jumped the gun — RED LIGHT foul
+    clearTimers();
+    phase = 'done';
+    resetTree();
+    ['ps1','ps2','st1','st2'].forEach(id => setBulb(id, true, '#ffd000'));
+    setBulb('rfl', true, '#ff1a1a');
+    flash('red', 600);
+    setStatus('🔴 RED LIGHT — FOUL', '#ff1a1a');
+    document.getElementById('treePanel').classList.add('shake');
+    setTimeout(() => document.getElementById('treePanel').classList.remove('shake'), 400);
+
+    const lb = addEntry(currentMode, { rt: 0, foul: true, date: Date.now() });
+    setTimeout(() => showResult(0, true, lb), 700);
+
+  } else if (phase === 'go') {
+    const rt = (performance.now() - goTimestamp) / 1000;
+    finishRace(rt, false);
+  }
+}
+
+function finishRace(rt, foul) {
+  if (phase === 'done') return;
+  clearTimers();
+  phase = 'done';
+  document.getElementById('grn').style.animation = '';
+  const lb = addEntry(currentMode, { rt, foul, date: Date.now() });
+  showResult(rt, foul, lb);
+}
+
+// ─── RESULT SCREEN ───────────────────────────────────────────────────────────
+function grade(rt) {
+  return GRADES.find(g => rt <= g.max) || GRADES[GRADES.length - 1];
+}
+
+function showResult(rt, foul, lb) {
+  showScreen('result');
+  const m = MODES[currentMode];
+
+  // Style run-again button
+  const rab = document.getElementById('resultRunAgain');
+  rab.style.background = m.color;
+  rab.style.boxShadow = `0 0 24px ${m.color}44`;
+
+  if (foul) {
+    document.getElementById('resultNormal').style.display = 'none';
+    document.getElementById('resultFoul').style.display = 'block';
+    document.getElementById('foulSub').textContent = `FOUL — EXCLUDED FROM ${m.label} RECORDS`;
+    document.getElementById('miniLb').innerHTML = '';
+  } else {
+    document.getElementById('resultNormal').style.display = 'block';
+    document.getElementById('resultFoul').style.display = 'none';
+
+    const g = grade(rt);
+    const gradeEl = document.getElementById('resultGrade');
+    gradeEl.textContent = g.label;
+    gradeEl.style.color = g.color;
+    gradeEl.style.textShadow = `0 0 20px ${g.color}88`;
+
+    document.getElementById('resultTime').innerHTML =
+      `${rt.toFixed(3)}<span class="result-unit">sec</span>`;
+
+    // PB check
+    const records = (lb[currentMode] || []);
+    const isPB = records.length > 0 && Math.abs(records[0].rt - rt) < 0.0005;
+    document.getElementById('resultPb').textContent = isPB ? '★ PERSONAL BEST ★' : '';
+
+    document.getElementById('resultMeta').textContent =
+      `${m.label} · GRADE ${g.grade}`;
+
+    // Mini leaderboard
+    const mini = document.getElementById('miniLb');
+    if (records.length > 0) {
+      let html = `<div class="mini-lb-header">${m.label} TOP TIMES</div>`;
+      records.slice(0, 5).forEach((r, i) => {
+        const isThis = Math.abs(r.rt - rt) < 0.0005 && i === 0;
+        html += `<div class="mini-lb-row">
+          <span class="lb-rank">${i + 1}.</span>
+          <span class="lb-time ${isThis ? 'highlight' : ''}">${r.rt.toFixed(3)}s</span>
+          <span class="lb-badge">${grade(r.rt).label}</span>
+        </div>`;
+      });
+      mini.innerHTML = html;
+    } else {
+      mini.innerHTML = '';
+    }
+  }
+}
+
+// ─── LEADERBOARD ─────────────────────────────────────────────────────────────
+function showLeaderboard() {
+  const lb = loadLB();
+  let html = '';
+
+  Object.values(MODES).forEach(m => {
+    const records = lb[m.id] || [];
+    const fouls = lb[m.id + '_fouls'] || 0;
+    html += `<div class="lb-section">
+      <div class="lb-section-header">
+        <span class="lb-section-name" style="color:${m.color}">${m.label}</span>
+        <span class="lb-section-sub">${m.sub}</span>
+      </div>`;
+
+    if (records.length === 0) {
+      html += `<div class="lb-empty">No runs yet</div>`;
+    } else {
+      records.forEach((r, i) => {
+        html += `<div class="lb-entry">
+          <span class="lb-entry-rank">${i + 1}.</span>
+          <span class="lb-entry-time ${i === 0 ? 'gold' : ''}">${r.rt.toFixed(3)}s</span>
+          <span class="lb-entry-rating">${grade(r.rt).label}</span>
+        </div>`;
+      });
+    }
+    if (fouls > 0) {
+      html += `<div style="font-size:10px; color:#777; letter-spacing:1px; margin-top:6px;">
+        🔴 ${fouls} foul${fouls > 1 ? 's' : ''} recorded (excluded)
+      </div>`;
+    }
+    html += `</div>`;
+  });
+
+  document.getElementById('lbContent').innerHTML = html;
+  showScreen('leaderboard');
+}
+
+function clearRecords() {
+  if (!confirm('Clear all records? This cannot be undone.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  showLeaderboard(); // refresh
+}
+
+// ─── KEYBOARD (desktop testing) ──────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (document.getElementById('race').classList.contains('active')) handleReact();
+    if (document.getElementById('menu').classList.contains('active')) beginRace();
+  }
+});
+
+// ─── PREVENT SCROLL/ZOOM ─────────────────────────────────────────────────────
+document.addEventListener('touchmove', e => {
+  if (e.target.closest('#leaderboard')) return;
+  e.preventDefault();
+}, { passive: false });
+document.addEventListener('contextmenu', e => e.preventDefault());
+</script>
+</body>
+</html>

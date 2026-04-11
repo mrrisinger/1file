@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>3 DOORS</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Rye&family=Special+Elite&display=swap');
+
+  :root {
+    --bg: #0a0806;
+    --panel: #120f0a;
+    --wood: #5c3a1e;
+    --wood-light: #7a4f2a;
+    --wood-dark: #3d2510;
+    --knob: #c9a84c;
+    --danger: #c0392b;
+    --safe: #27ae60;
+    --text: #e8d5b0;
+    --accent: #f0a500;
+    --glow: rgba(240,165,0,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Special Elite', serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    background-image: 
+      radial-gradient(ellipse at 50% 0%, #1a1005 0%, #0a0806 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px);
+  }
+
+  header {
+    text-align: center;
+    padding: 24px 16px 8px;
+    width: 100%;
+  }
+
+  .title {
+    font-family: 'Creepster', cursive;
+    font-size: 3rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-shadow: 0 0 20px var(--glow), 0 2px 0 #3d2510;
+    line-height: 1;
+  }
+
+  .subtitle {
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #6b5a3e;
+    margin-top: 4px;
+  }
+
+  .counter-bar {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding: 12px 24px;
+    margin: 8px 16px;
+    background: #0f0c08;
+    border: 1px solid #2a1f10;
+    border-radius: 4px;
+    width: calc(100% - 32px);
+    max-width: 480px;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: 'Creepster', cursive;
+    font-size: 2rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #6b5a3e;
+  }
+
+  /* DOORS */
+  .doors-section {
+    width: 100%;
+    max-width: 480px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .doors-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .door-wrap {
+    flex: 1;
+    max-width: 130px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .door-label {
+    font-family: 'Rye', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: #6b5a3e;
+    text-transform: uppercase;
+  }
+
+  .door {
+    width: 100%;
+    aspect-ratio: 0.55;
+    cursor: pointer;
+    position: relative;
+    border-radius: 4px 4px 0 0;
+    background: linear-gradient(135deg, var(--wood-light) 0%, var(--wood) 40%, var(--wood-dark) 100%);
+    border: 3px solid var(--wood-dark);
+    box-shadow: 
+      inset 2px 2px 0 rgba(255,255,255,0.08),
+      inset -2px -2px 0 rgba(0,0,0,0.3),
+      4px 6px 16px rgba(0,0,0,0.6);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-appearance: none;
+    appearance: none;
+    padding: 0;
+  }
+
+  .door:not(.disabled):active {
+    transform: scale(0.96) translateY(2px);
+    box-shadow: 2px 3px 8px rgba(0,0,0,0.6);
+  }
+
+  .door::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 2px solid rgba(0,0,0,0.25);
+    border-radius: 2px;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
+  }
+
+  /* Wood grain lines */
+  .door::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      180deg,
+      transparent 0px, transparent 6px,
+      rgba(0,0,0,0.04) 6px, rgba(0,0,0,0.04) 7px
+    );
+  }
+
+  .door-knob {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: radial-gradient(circle at 35% 35%, #f0d060, var(--knob), #8a6010);
+    border-radius: 50%;
+    bottom: 25%;
+    right: 14%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
+    z-index: 2;
+  }
+
+  .door.disabled, .door:disabled { cursor: default; pointer-events: none; }
+
+  .door.reveal-safe {
+    animation: door-open-safe 0.5s ease forwards;
+  }
+
+  .door.reveal-danger {
+    animation: door-open-danger 0.5s ease forwards;
+  }
+
+  .door.dim-out {
+    animation: door-dim 0.5s ease forwards;
+  }
+
+  @keyframes door-open-safe {
+    0% { transform: perspective(400px) rotateY(0deg); background: linear-gradient(135deg, var(--wood-light) 0%, var(--wood) 40%, var(--wood-dark) 100%); }
+    60% { transform: perspective(400px) rotateY(-50deg); background: #1a4a2a; }
+    100% { transform: perspective(400px) rotateY(-50deg); background: linear-gradient(135deg, #1e5a30, #27ae60); }
+  }
+
+  @keyframes door-open-danger {
+    0% { transform: perspective(400px) rotateY(0deg); }
+    30% { transform: perspective(400px) rotateY(-30deg); }
+    40% { transform: perspective(400px) rotateY(-25deg) scale(1.05); }
+    100% { transform: perspective(400px) rotateY(-50deg); background: linear-gradient(135deg, #5a0a0a, var(--danger)); }
+  }
+
+  @keyframes door-dim {
+    to { opacity: 0.3; filter: grayscale(0.5); }
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .modal-overlay.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: #120f0a;
+    border: 2px solid;
+    border-radius: 6px;
+    padding: 28px 24px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    transform: scale(0.85);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .modal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.05;
+    background: repeating-linear-gradient(45deg, currentColor 0, currentColor 1px, transparent 0, transparent 50%);
+    background-size: 8px 8px;
+    pointer-events: none;
+  }
+
+  .modal-overlay.show .modal {
+    transform: scale(1);
+  }
+
+  .modal.safe { border-color: var(--safe); }
+  .modal.danger { border-color: var(--danger); }
+
+  .modal-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    display: block;
+    animation: pop-in 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;
+  }
+
+  @keyframes pop-in {
+    from { transform: scale(0) rotate(-20deg); opacity: 0; }
+    to { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .modal-title {
+    font-family: 'Creepster', cursive;
+    font-size: 1.8rem;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+
+  .modal.safe .modal-title { color: var(--safe); }
+  .modal.danger .modal-title { color: var(--danger); }
+
+  .modal-body {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #c4a87a;
+    margin-bottom: 20px;
+  }
+
+  .modal-btn {
+    display: inline-block;
+    font-family: 'Special Elite', serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 12px 28px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    z-index: 10;
+  }
+
+  .modal-btn:active { transform: scale(0.97); }
+
+  .modal.safe .modal-btn {
+    background: var(--safe);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(39,174,96,0.4);
+  }
+
+  .modal.danger .modal-btn {
+    background: var(--danger);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(192,57,43,0.4);
+  }
+
+  /* FLOOR */
+  .floor {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    justify-content: center;
+    padding: 0 16px;
+    max-width: 480px;
+  }
+
+  .floor-tile {
+    flex: 1;
+    max-width: 130px;
+    height: 10px;
+    background: linear-gradient(180deg, #2a1f10, #1a1008);
+    border-radius: 0 0 3px 3px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+  }
+
+  .hint-text {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: #3d2f1a;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 16px;
+    margin-top: auto;
+  }
+
+  .skull-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    flex-wrap: wrap;
+    max-width: 480px;
+  }
+
+  .skull {
+    font-size: 0.9rem;
+    opacity: 0.15;
+  }
+
+  .skull.lit {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(192,57,43,0.8));
+    animation: skull-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  @keyframes skull-pop {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+  }
+</style>
+  <style>
+    .home-nav { position: fixed; top: 0; left: 0; z-index: 9999; padding: 6px 14px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-bottom-right-radius: 8px; }
+    .home-nav a { color: rgba(255,255,255,0.75); text-decoration: none;
+      font-family: monospace; font-size: 0.8rem; letter-spacing: 0.06em; }
+    .home-nav a:hover { color: #fff; }
+    .studios-credit { position: fixed; bottom: 0; right: 0; z-index: 9999; padding: 5px 12px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-top-left-radius: 8px;
+      font-family: monospace; font-size: 0.7rem; color: rgba(255,255,255,0.4);
+      letter-spacing: 0.05em; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <nav class="home-nav"><a href="../index.html">&#8592; Projects</a></nav>
+  <div class="studios-credit">2357 Studios</div>
+
+<header>
+  <div class="title">3 DOORS</div>
+  <div class="subtitle">choose wisely — or don't</div>
+</header>
+
+<div class="counter-bar">
+  <div class="stat">
+    <div class="stat-num" id="doors-opened">0</div>
+    <div class="stat-label">Doors Opened</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" id="streak">0</div>
+    <div class="stat-label">Best Streak</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" id="deaths">0</div>
+    <div class="stat-label">Deaths</div>
+  </div>
+</div>
+
+<div class="skull-row" id="skull-row">
+  <span class="skull">💀</span>
+  <span class="skull">💀</span>
+  <span class="skull">💀</span>
+  <span class="skull">💀</span>
+  <span class="skull">💀</span>
+</div>
+
+<div class="doors-section">
+  <div class="doors-row" id="doors-row">
+    <div class="door-wrap">
+      <div class="door-label">Door I</div>
+      <button class="door" id="door-0" onclick="chooseDoor(0)">
+        <div class="door-knob"></div>
+      </button>
+    </div>
+    <div class="door-wrap">
+      <div class="door-label">Door II</div>
+      <button class="door" id="door-1" onclick="chooseDoor(1)">
+        <div class="door-knob"></div>
+      </button>
+    </div>
+    <div class="door-wrap">
+      <div class="door-label">Door III</div>
+      <button class="door" id="door-2" onclick="chooseDoor(2)">
+        <div class="door-knob"></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="floor">
+  <div class="floor-tile"></div>
+  <div class="floor-tile"></div>
+  <div class="floor-tile"></div>
+</div>
+
+<div class="hint-text">2 of 3 doors are safe &nbsp;·&nbsp; 1 will end you</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <span class="modal-icon" id="modal-icon"></span>
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-body" id="modal-body"></div>
+    <button class="modal-btn" id="modal-btn" onclick="nextRound()"></button>
+  </div>
+</div>
+
+<script>
+const deaths = [
+  { text: "A tiny violinist appears and plays the world's saddest song until you simply cease to exist from sheer emotional devastation.", icon: "🎻" },
+  { text: "You are immediately buried under an avalanche of 40,000 Bed Bath & Beyond coupons. They were 20% off. You are not.", icon: "📬" },
+  { text: "A passive-aggressive note from your neighbor is taped to you at such a precise angle it cuts off your circulation. Goodbye.", icon: "📝" },
+  { text: "A sentient roomba locks eyes with you, sighs deeply, and vacuums your entire soul out through your left foot.", icon: "🤖" },
+  { text: "You are slowly consumed by a motivational poster that reads 'HANG IN THERE.' You cannot.", icon: "🐱" },
+  { text: "An extremely confident pigeon lands on your head and files a homestead claim. You are now legally his property.", icon: "🐦" },
+  { text: "You attempt to say 'specifically' three times fast and your tongue just leaves. Your body follows out of loyalty.", icon: "👅" },
+  { text: "A guy named Gerald materializes, hands you a warm La Croix, and says 'this one's sparkling, just like you were.' You die on the spot.", icon: "🥤" },
+  { text: "You step on a Lego made of pure concentrated regret. It knows what you did in 2009.", icon: "🧱" },
+  { text: "You accidentally make eye contact with yourself in a spoon. The curved version wins. You lose.", icon: "🥄" },
+  { text: "A cloud shaped exactly like your ex drifts overhead. It begins to rain. You drown on a technicality.", icon: "☁️" },
+  { text: "You receive a calendar invite titled 'Your End' with no description. You accept out of habit.", icon: "📅" },
+  { text: "A golden retriever runs over to you, then past you, to greet someone else. Your heart gives up.", icon: "🐕" },
+  { text: "An extremely tiny man living in your ear has filed a noise complaint. The enforcement is fatal.", icon: "👂" },
+  { text: "You are killed by the concept of a Monday. No further details available.", icon: "😩" },
+  { text: "A font that looks like Comic Sans but is somehow worse appears in your vision. Your brain surrenders.", icon: "📄" },
+  { text: "You trip over a wifi router and fall directly into the loading spinner. You buffer for 4 years and then crash.", icon: "📶" },
+  { text: "A chef's kiss turns out to be structural. The kiss holds up the building. You removed it.", icon: "🤌" },
+  { text: "Your horoscope for today reads: 'It's a good day to die, Taurus.' It's accurate.", icon: "⭐" },
+  { text: "The elevator music becomes sentient and plays you into oblivion. It was a bossa nova remix of 'Mmmbop.'", icon: "🛗" },
+  { text: "You are aggressively LinkedIn requested by someone from 2011 who describes themselves as a 'thought leader.' The shame kills you.", icon: "💼" },
+  { text: "A seagull drops a gas station sushi roll on your head. This is, medically speaking, unsurvivable.", icon: "🍣" },
+  { text: "You realize mid-sentence that you've been pronouncing 'quinoa' wrong for 12 years. Your body simply logs off.", icon: "🌾" },
+  { text: "An extremely judgmental librarian shushes you so hard your molecules separate. You're asked to keep it down on the way out.", icon: "📚" },
+  { text: "You are engulfed in a ball pit at a children's party. No one can explain how. The ball pit gives no comment.", icon: "⚽" },
+  { text: "A gentle breeze whispers 'have you tried turning yourself off and on again?' You cannot find the button.", icon: "💨" },
+  { text: "You accidentally open 47 tabs and your brain runs out of RAM. Fatal exception. Core dumped.", icon: "💻" },
+  { text: "A participation trophy becomes sentient and begs you to take it. You do. It is too heavy.", icon: "🏆" },
+  { text: "A mime traps you in an invisible box. It turns out the box was structurally load-bearing for your existence.", icon: "🎭" },
+  { text: "You are struck by lightning during a sunny day. The lightning apologizes but maintains it had no choice.", icon: "⚡" },
+  { text: "An automated phone tree puts you on hold permanently. The hold music is 'All Star' by Smash Mouth. You accept your fate.", icon: "📞" },
+  { text: "A bread clip pops off a bag and hits you in the eye with the force of a thousand suns. Loaf wins.", icon: "🍞" },
+  { text: "You try to take a 'quick nap' and a raccoon files squatter's rights claims on your unconscious body.", icon: "🦝" },
+  { text: "You check your step count and it says -3. The phone is correct.", icon: "👟" },
+  { text: "You are consumed by a podcast that describes itself as 'long-form but worth it.' It is 11 hours. It is not worth it.", icon: "🎙️" },
+  { text: "A grocery store self-checkout machine says 'unexpected item in bagging area' and it is referring to you personally.", icon: "🛒" },
+  { text: "You are knighted by a king who immediately un-knights you, then re-knights you too aggressively. The sword does its thing.", icon: "⚔️" },
+  { text: "A plant you forgot to water for three years finally dies, taking you spiritually with it.", icon: "🪴" },
+  { text: "Your autocorrect changes your last words to 'duck' and your body respects the edit.", icon: "🦆" },
+  { text: "A fortune cookie reads 'You will encounter unexpected challenges today — the big one.' It was not wrong.", icon: "🥠" },
+  { text: "You sneeze and a coworker says 'bless you' four times in a row until it's too much blessing. Fatal overdose.", icon: "🤧" },
+  { text: "You try to put IKEA furniture together without the instructions. The furniture assembles itself and you instead.", icon: "🔧" },
+  { text: "A man on the street offers you a sample of something on a toothpick. It is 'hubris.' You take too much.", icon: "🪥" },
+  { text: "You open a bag of chips quietly in a silent room. The whole room dies. You go first.", icon: "🥔" },
+  { text: "A pirate appears and makes you walk the plank. There was no ship. He had a very long plank.", icon: "🏴‍☠️" },
+  { text: "You leave a one-star review and the business owner materializes and very politely refutes each point until you no longer exist.", icon: "⭐" },
+  { text: "Your Spotify Wrapped reveals your most played song was a 6-hour lo-fi track called 'sad hours.' Your body agrees.", icon: "🎵" },
+  { text: "A squirrel steals your phone and changes all your passwords. You die from the process of recovering your accounts.", icon: "🐿️" },
+  { text: "You are told to 'circle back' one too many times. You circle so far back you exit the timeline.", icon: "🔄" },
+  { text: "An extremely smug cat knocks your water bottle off a table and blinks slowly at you. That blink was lethal.", icon: "😼" },
+  { text: "You trip on a garden hose while carrying a birthday cake. The wish was not for you.", icon: "🎂" },
+  { text: "A yoga instructor tells you to 'release what no longer serves you.' Your skeleton complies immediately.", icon: "🧘" },
+  { text: "Your voicemail is full. The messages inside escape and overwhelm you. Three of them were spam.", icon: "📱" },
+  { text: "You eat a gas station hot dog that has been rotating since 2017. The hot dog has seniority and wins.", icon: "🌭" },
+  { text: "You are challenged to a staring contest by a mannequin. It does not blink. You blink twice. Game over.", icon: "🪆" },
+  { text: "A tiny horse appears on your shoulder and says 'no' every time you try to do anything, forever, until you don't.", icon: "🐴" },
+  { text: "The printer jams on your soul. Tech support says have you tried turning yourself off and on again. You have.", icon: "🖨️" },
+  { text: "You are killed by irony when you buy travel insurance just before a trip and still somehow die at home.", icon: "🧳" },
+  { text: "A motivational speaker says 'WAKE UP!' too loudly and directly into your skull. Your brain exits through the other ear.", icon: "📣" },
+  { text: "You misspell your own name on an official document. The government considers this legally binding and removes you.", icon: "📋" },
+  { text: "You step on a bathroom scale and it displays a philosophical question instead of a number. You cannot answer it.", icon: "⚖️" },
+  { text: "A bouncy castle collapses with you inside. You had signed a waiver. The waiver was satisfied.", icon: "🎪" },
+  { text: "You receive a 'per my last email' reply. You had not sent a last email. It finds you anyway.", icon: "📧" },
+  { text: "A very focused ant carries you away one atom at a time. It takes a while but the ant is committed.", icon: "🐜" },
+  { text: "You try to use a fountain pen and it explodes with a precision and enthusiasm that physics cannot explain.", icon: "✒️" },
+  { text: "A TED Talk about 'failing forward' shows up in your dreams and you die during the standing ovation.", icon: "👏" },
+  { text: "You are photobombed in a photo that hasn't been taken yet. The paradox resolves itself at your expense.", icon: "📸" },
+  { text: "A barista misspells your name so severely it summons an entity. The entity is you but slightly wrong.", icon: "☕" },
+  { text: "You attempt to fold a fitted sheet correctly. This has never been done. Your body folds instead.", icon: "🛏️" },
+  { text: "A crossword clue is '7-letter word for your demise.' You figure it out. It autofills in real life.", icon: "📰" },
+  { text: "You try to pet a cat that was not offering pets. The transaction is non-refundable.", icon: "🐈" },
+  { text: "Your umbrella turns inside out in the wind. So do you.", icon: "☂️" },
+  { text: "A speed bump appears out of nowhere. You are on foot. The speed bump does not care.", icon: "🚗" },
+  { text: "You use the phrase 'it is what it is' and a philosopher materializes and argues until your will collapses.", icon: "🎓" },
+  { text: "A flock of geese honks at you in a language you almost understand. Almost. It costs you everything.", icon: "🦢" },
+  { text: "You try to whistle and accidentally summon something. It is not friendly. It is, however, impressed by the attempt.", icon: "💀" },
+  { text: "Your noise-canceling headphones cancel too much noise, including the noise your organs make. Silence achieved.", icon: "🎧" },
+  { text: "You accidentally like a 9-year-old post on social media. The shame creates a singularity. You fall in.", icon: "📱" },
+  { text: "A jar of pickles refuses to open. You have been struggling for 14 minutes. You are the pickle now.", icon: "🥒" },
+  { text: "You are given 'feedback' by a coworker who prefaces it with 'as a thought experiment.' The experiment concludes badly.", icon: "🔬" },
+  { text: "A glitter card is opened nearby. The glitter achieves critical mass and overtakes your entire immune system.", icon: "✨" },
+  { text: "You say 'I'll sleep when I'm dead' one too many times and the universe takes notes.", icon: "😴" },
+  { text: "A stress ball you squeeze summons its feelings back at you. You were not prepared for 8 years of suppressed stress ball emotions.", icon: "🫃" },
+  { text: "You try to remove a band-aid slowly. It is the wrong move. It has always been the wrong move.", icon: "🩹" },
+  { text: "An escape room designer builds a room with no solution specifically for you. You solve it anyway. That was the trap.", icon: "🔐" },
+  { text: "You open a package that says 'some assembly required.' There are 600 pieces. You are one of them.", icon: "📦" },
+  { text: "Your horoscope and your shadow give conflicting advice. Your shadow wins. It always does.", icon: "🌑" },
+  { text: "A vending machine dispenses your snack but it gets stuck. You reach in. That's it. That's the whole story.", icon: "🍫" },
+  { text: "You are given an inspirational calendar. The page for today reads: 'Surprise!' That's all it says.", icon: "🗓️" },
+  { text: "You are bitten by a radioactive accountant. You gain the proportional spreadsheet skills of an accountant. Your body cannot handle the Excel.", icon: "🦇" },
+  { text: "A DJ drops the beat exactly on you. Specifically on you. The bass frequency was your exact resonance.", icon: "🎚️" },
+  { text: "You win a raffle you don't remember entering. The prize is a mystery box. The box is not a prize.", icon: "🎁" },
+  { text: "A motivational magnet on a fridge says 'Live. Laugh. Love.' It means it literally. In that order. All at once.", icon: "🧲" },
+  { text: "You try to return an item without a receipt. The customer service rep is Death. Policy is policy.", icon: "🏪" },
+  { text: "You open a self-help book to a random page. It says 'Chapter 14: The End.' It was not a metaphor.", icon: "📖" },
+  { text: "A bubble wrap sheet refuses to pop. You have been pressing for 40 minutes. It pops you instead.", icon: "💥" },
+  { text: "You try to set a personal best at the gym and the gym itself sets a personal best against you.", icon: "🏋️" },
+  { text: "A paper cut occurs in a place you can't explain. The paperwork to describe it finishes you off.", icon: "📄" },
+  { text: "You read the terms and conditions. All of them. The final clause was for you specifically. You had agreed.", icon: "📜" },
+  { text: "You are strapped to a chair and forced to listen to a Drake album front to back. Medical examiners later rule the cause of death as 'vibes.' The champagne was not poured.", icon: "🦉" },
+];
+
+// Wire up modal button
+document.getElementById('modal-btn').onclick = nextRound;
+
+let doorsOpened = 0;
+let currentStreak = 0;
+let bestStreak = 0;
+let deathCount = 0;
+let locked = false;
+
+const deathIndices = Array.from({length: deaths.length}, (_, i) => i);
+let usedDeaths = [];
+
+function getRandomDeath() {
+  if (usedDeaths.length >= deaths.length) usedDeaths = [];
+  const remaining = deathIndices.filter(i => !usedDeaths.includes(i));
+  const idx = remaining[Math.floor(Math.random() * remaining.length)];
+  usedDeaths.push(idx);
+  return deaths[idx];
+}
+
+function chooseDoor(idx) {
+  if (locked) return;
+  locked = true;
+
+  // Disable all doors natively
+  for (let i = 0; i < 3; i++) {
+    document.getElementById('door-' + i).disabled = true;
+  }
+
+  const deadDoor = Math.floor(Math.random() * 3);
+  const isDead = idx === deadDoor;
+
+  const chosenEl = document.getElementById('door-' + idx);
+  chosenEl.classList.add(isDead ? 'reveal-danger' : 'reveal-safe');
+  chosenEl.classList.add('disabled');
+
+  for (let i = 0; i < 3; i++) {
+    if (i !== idx) {
+      document.getElementById('door-' + i).classList.add('dim-out', 'disabled');
+    }
+  }
+
+  setTimeout(() => {
+    if (isDead) {
+      const death = getRandomDeath();
+      showModal(false, death);
+    } else {
+      doorsOpened++;
+      currentStreak++;
+      if (currentStreak > bestStreak) bestStreak = currentStreak;
+      updateStats();
+      showModal(true, null);
+    }
+  }, 600);
+}
+
+function showModal(safe, death) {
+  const overlay = document.getElementById('modal-overlay');
+  const modal = document.getElementById('modal');
+  const icon = document.getElementById('modal-icon');
+  const title = document.getElementById('modal-title');
+  const body = document.getElementById('modal-body');
+  const btn = document.getElementById('modal-btn');
+
+  modal.className = 'modal ' + (safe ? 'safe' : 'danger');
+
+  if (safe) {
+    icon.textContent = ['✅','🚪','😅','🙌','👍','💪','🎉'][Math.floor(Math.random()*7)];
+    title.textContent = 'You Survived!';
+    body.textContent = 'You stumble through into... another hallway. More doors ahead. Of course.';
+    btn.textContent = 'Keep Going →';
+  } else {
+    deathCount++;
+    currentStreak = 0;
+    updateStats();
+    updateSkulls();
+    icon.textContent = death.icon;
+    title.textContent = 'You Died.';
+    body.textContent = death.text;
+    btn.textContent = 'Try Again';
+  }
+
+  overlay.classList.add('show');
+}
+
+function nextRound() {
+  document.getElementById('modal-overlay').classList.remove('show');
+  locked = false;
+
+  for (let i = 0; i < 3; i++) {
+    const el = document.getElementById('door-' + i);
+    el.className = 'door';
+    el.disabled = false;
+    el.style = '';
+  }
+}
+
+function updateStats() {
+  document.getElementById('doors-opened').textContent = doorsOpened;
+  document.getElementById('streak').textContent = bestStreak;
+  document.getElementById('deaths').textContent = deathCount;
+}
+
+function updateSkulls() {
+  const skulls = document.querySelectorAll('.skull');
+  const lit = Math.min(deathCount, skulls.length);
+  skulls.forEach((s, i) => {
+    if (i < lit) s.classList.add('lit');
+  });
+}
+</script>
+</body>
+</html>

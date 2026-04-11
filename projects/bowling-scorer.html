@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>League Scorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0f0e0c;
+    --surface:  #1c1b18;
+    --border:   #3a3835;
+    --accent:   #f0c040;
+    --text:     #ffffff;
+    --muted:    #a09a90;
+    --dim:      #3a3835;
+    --team1:    #2e5a82;
+    --team2:    #8a2020;
+    --green:    #4cdb8a;
+    --green-bg: rgba(76,219,138,0.13);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding: 20px 12px 60px;
+  }
+
+  header { text-align: center; margin-bottom: 28px; }
+
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.6rem, 10vw, 5rem);
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    line-height: 1;
+    text-shadow: 3px 3px 0 #000;
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .teams-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 900px) {
+    .teams-wrap { flex-direction: row; max-width: 1000px; }
+    .team-card  { flex: 1; }
+  }
+
+  .team-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .team-header { padding: 11px 14px; }
+  .team-card:nth-child(1) .team-header { background: var(--team1); }
+  .team-card:nth-child(2) .team-header { background: var(--team2); }
+
+  input.team-name {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.08em;
+    color: #fff;
+    width: 100%;
+  }
+  input.team-name::placeholder { color: rgba(255,255,255,0.4); }
+
+  /* Columns: # | Hdcp | G1 | G2 | G3 | Scratch */
+  .grid5 {
+    display: grid;
+    grid-template-columns: 28px 52px 1fr 1fr 1fr 56px;
+  }
+
+  .col-head {
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.4);
+  }
+  .col-head span {
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+    padding: 6px 2px;
+    display: block;
+  }
+
+  .player-row { border-bottom: 1px solid var(--border); align-items: stretch; }
+
+  .player-num {
+    font-size: 0.65rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid var(--border);
+  }
+
+  .player-row input,
+  .player-row .cell {
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.88rem;
+    color: var(--text);
+    padding: 10px 4px;
+    width: 100%;
+    text-align: center;
+    display: block;
+    -moz-appearance: textfield;
+  }
+  .player-row input::-webkit-outer-spin-button,
+  .player-row input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .player-row input { outline: none; }
+  .player-row input:focus { background: rgba(240,192,64,0.07); }
+  .player-row input::placeholder { color: var(--muted); }
+  .player-row .cell:last-child { border-right: none; }
+  .cell.scratch { color: var(--accent); font-weight: 500; }
+
+  /* Per-game totals */
+  .game-totals-section {
+    border-top: 2px solid #111;
+    background: rgba(0,0,0,0.32);
+  }
+
+  .gtotal-row {
+    display: grid;
+    grid-template-columns: 28px 52px 1fr 1fr 1fr 56px;
+    border-bottom: 1px solid var(--dim);
+  }
+  .gtotal-row:last-child { border-bottom: none; }
+
+  .gtotal-row .gc {
+    padding: 6px 4px;
+    text-align: center;
+    font-size: 0.82rem;
+    border-right: 1px solid var(--dim);
+    color: var(--text);
+    display: block;
+  }
+  .gtotal-row .gc:last-child { border-right: none; }
+  .gtotal-row .gc.lbl {
+    grid-column: span 2;
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--muted);
+    text-align: left;
+    padding-left: 10px;
+    display: flex;
+    align-items: center;
+    line-height: 1.3;
+  }
+
+  .gtotal-row.row-scratch .gc.gval { color: var(--accent); }
+  .gtotal-row.row-hdcp    .gc.gval { color: var(--muted); font-size: 0.76rem; }
+  .gtotal-row.row-htotal  .gc.gval { color: var(--text); font-weight: 500; font-size: 0.9rem; }
+
+  .gc.high-game {
+    color: var(--green) !important;
+    background: var(--green-bg);
+    font-weight: 500;
+  }
+
+  /* Series summary */
+  .series-summary {
+    border-top: 2px solid #111;
+    background: rgba(0,0,0,0.2);
+  }
+
+  .series-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--dim);
+  }
+  .series-row:last-child { border-bottom: none; }
+
+  .s-label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    padding-right: 8px;
+  }
+
+  .s-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  .series-row.hdcp-only .s-val { font-size: 1.2rem; color: var(--muted); }
+  .series-row.primary   .s-val { font-size: 2rem;   color: var(--accent); }
+  .series-row.primary.winner .s-val { color: var(--green); }
+</style>
+  <style>
+    .home-nav { position: fixed; top: 0; left: 0; z-index: 9999; padding: 6px 14px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-bottom-right-radius: 8px; }
+    .home-nav a { color: rgba(255,255,255,0.75); text-decoration: none;
+      font-family: monospace; font-size: 0.8rem; letter-spacing: 0.06em; }
+    .home-nav a:hover { color: #fff; }
+    .studios-credit { position: fixed; bottom: 0; right: 0; z-index: 9999; padding: 5px 12px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-top-left-radius: 8px;
+      font-family: monospace; font-size: 0.7rem; color: rgba(255,255,255,0.4);
+      letter-spacing: 0.05em; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <nav class="home-nav"><a href="../index.html">&#8592; Projects</a></nav>
+  <div class="studios-credit">2357 Studios</div>
+
+<header>
+  <h1>League Scorer</h1>
+  <p>3-Game Series &bull; Real-Time</p>
+</header>
+
+<div class="teams-wrap" id="teamsWrap"></div>
+
+<script>
+const TEAMS   = [{ id: 't1', name: 'Team One' }, { id: 't2', name: 'Team Two' }];
+const PLAYERS = 4;
+const GAMES   = 3;
+
+function build() {
+  const wrap = document.getElementById('teamsWrap');
+
+  TEAMS.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'team-card';
+    card.dataset.team = t.id;
+
+    card.innerHTML = `
+      <div class="team-header">
+        <input class="team-name" placeholder="${t.name}" value="${t.name}" />
+      </div>
+      <div class="grid5 col-head">
+        <span>#</span><span>Hdcp</span><span>G1</span><span>G2</span><span>G3</span><span>Scr</span>
+      </div>
+    `;
+
+    for (let p = 0; p < PLAYERS; p++) {
+      const row = document.createElement('div');
+      row.className = 'grid5 player-row';
+      row.innerHTML = `
+        <div class="player-num">${p + 1}</div>
+        <input type="number" placeholder="0"  min="0" max="300" inputmode="numeric" data-t="${t.id}" data-p="${p}" data-f="hdcp" />
+        <input type="number" placeholder="—"  min="0" max="300" inputmode="numeric" data-t="${t.id}" data-p="${p}" data-f="g0" />
+        <input type="number" placeholder="—"  min="0" max="300" inputmode="numeric" data-t="${t.id}" data-p="${p}" data-f="g1" />
+        <input type="number" placeholder="—"  min="0" max="300" inputmode="numeric" data-t="${t.id}" data-p="${p}" data-f="g2" />
+        <div class="cell scratch" data-t="${t.id}" data-p="${p}" data-f="scratch">—</div>
+      `;
+      card.appendChild(row);
+    }
+
+    const gts = document.createElement('div');
+    gts.className = 'game-totals-section';
+
+    [
+      { cls: 'row-scratch', label: 'Scratch',    pre: 'gs' },
+      { cls: 'row-hdcp',    label: 'Handicap',   pre: 'gh' },
+      { cls: 'row-htotal',  label: 'Game Total', pre: 'gt' },
+    ].forEach(({ cls, label, pre }) => {
+      const row = document.createElement('div');
+      row.className = `gtotal-row ${cls}`;
+      row.innerHTML = `
+        <div class="gc lbl">${label}</div>
+        <div class="gc gval" data-t="${t.id}" data-f="${pre}0">—</div>
+        <div class="gc gval" data-t="${t.id}" data-f="${pre}1">—</div>
+        <div class="gc gval" data-t="${t.id}" data-f="${pre}2">—</div>
+        <div class="gc"></div>
+      `;
+      gts.appendChild(row);
+    });
+    card.appendChild(gts);
+
+    const ss = document.createElement('div');
+    ss.className = 'series-summary';
+    ss.innerHTML = `
+      <div class="series-row">
+        <span class="s-label">Team Scratch Series</span>
+        <span class="s-val" data-t="${t.id}" data-f="series-scratch">—</span>
+      </div>
+      <div class="series-row hdcp-only">
+        <span class="s-label">Total Handicap</span>
+        <span class="s-val" data-t="${t.id}" data-f="series-hdcp">—</span>
+      </div>
+      <div class="series-row primary" data-t="${t.id}" data-f="series-row-total">
+        <span class="s-label">Team Total</span>
+        <span class="s-val" data-t="${t.id}" data-f="series-total">—</span>
+      </div>
+    `;
+    card.appendChild(ss);
+
+    wrap.appendChild(card);
+  });
+}
+
+function n(el) { if (!el) return 0; const v = parseInt(el.value, 10); return isNaN(v) ? 0 : v; }
+function q(s)  { return document.querySelector(s); }
+
+function recalc(tid) {
+  let teamScratch = 0, teamHdcp = 0;
+  const gameScratch = [0,0,0], gameHdcp = [0,0,0];
+
+  for (let p = 0; p < PLAYERS; p++) {
+    const hdcp  = n(q(`[data-t="${tid}"][data-p="${p}"][data-f="hdcp"]`));
+    const games = [0,1,2].map(g => n(q(`[data-t="${tid}"][data-p="${p}"][data-f="g${g}"]`)));
+    const scratch = games[0] + games[1] + games[2];
+
+    const sc = q(`[data-t="${tid}"][data-p="${p}"][data-f="scratch"]`);
+    if (sc) sc.textContent = scratch || '—';
+
+    teamScratch += scratch;
+    teamHdcp    += hdcp * GAMES;
+    games.forEach((v, i) => { gameScratch[i] += v; gameHdcp[i] += hdcp; });
+  }
+
+  const gameTotal = [0,1,2].map(i => gameScratch[i] + gameHdcp[i]);
+
+  [0,1,2].forEach(g => {
+    const gs = q(`[data-t="${tid}"][data-f="gs${g}"]`);
+    const gh = q(`[data-t="${tid}"][data-f="gh${g}"]`);
+    const gt = q(`[data-t="${tid}"][data-f="gt${g}"]`);
+    if (gs) gs.textContent = gameScratch[g] || '—';
+    if (gh) gh.textContent = gameHdcp[g]    || '—';
+    if (gt) gt.textContent = gameTotal[g]   || '—';
+  });
+
+  const ss  = q(`[data-t="${tid}"][data-f="series-scratch"]`);
+  const sh  = q(`[data-t="${tid}"][data-f="series-hdcp"]`);
+  const tot = q(`[data-t="${tid}"][data-f="series-total"]`);
+  if (ss)  ss.textContent  = teamScratch || '—';
+  if (sh)  sh.textContent  = teamHdcp    || '—';
+  if (tot) tot.textContent = (teamScratch + teamHdcp) || '—';
+
+  const card = q(`[data-team="${tid}"]`);
+  if (card) {
+    card.dataset.seriesTotal = teamScratch + teamHdcp;
+    card.dataset.gameTotals  = JSON.stringify(gameTotal);
+  }
+
+  highlightAll();
+}
+
+function highlightAll() {
+  const allGameTotals = TEAMS.map(t => {
+    const card = q(`[data-team="${t.id}"]`);
+    return card?.dataset.gameTotals ? JSON.parse(card.dataset.gameTotals) : [0,0,0];
+  });
+
+  [0,1,2].forEach(g => {
+    const vals = TEAMS.map((_, i) => allGameTotals[i][g]);
+    const max  = Math.max(...vals);
+    const tied = vals[0] === vals[1] && max > 0;
+    TEAMS.forEach((t, i) => {
+      const el = q(`[data-t="${t.id}"][data-f="gt${g}"]`);
+      if (el) el.classList.toggle('high-game', !tied && vals[i] === max && max > 0);
+    });
+  });
+
+  const serials   = TEAMS.map(t => parseInt(q(`[data-team="${t.id}"]`)?.dataset.seriesTotal || 0, 10));
+  const maxSeries = Math.max(...serials);
+  const tied      = serials[0] === serials[1];
+  TEAMS.forEach((t, i) => {
+    const row = q(`[data-t="${t.id}"][data-f="series-row-total"]`);
+    if (row) row.classList.toggle('winner', !tied && serials[i] === maxSeries && maxSeries > 0);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  build();
+  document.getElementById('teamsWrap').addEventListener('input', e => {
+    const tid = e.target.dataset?.t;
+    if (tid) recalc(tid);
+  });
+});
+</script>
+</body>
+</html>

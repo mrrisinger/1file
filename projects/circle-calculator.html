@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circle Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3a;
+    --accent: #4ecdc4;
+    --accent-dim: rgba(78, 205, 196, 0.12);
+    --text: #e8e8ed;
+    --text-dim: #7a7d8a;
+    --input-bg: #12141c;
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 440px;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  h1 .icon {
+    width: 32px;
+    height: 32px;
+    border: 2.5px solid var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 28px;
+    font-weight: 300;
+  }
+
+  .input-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .input-group:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .input-group label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .input-row input {
+    flex: 1;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 1.1rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input-row input:focus {
+    border-color: var(--accent);
+  }
+
+  .input-row input::placeholder {
+    color: var(--text-dim);
+    opacity: 0.5;
+  }
+
+  .formula {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-top: 6px;
+    opacity: 0.7;
+  }
+
+  .results {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-top: 20px;
+  }
+
+  .results h2 {
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-row:last-child { border-bottom: none; }
+
+  .result-label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    font-weight: 300;
+  }
+
+  .result-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 1rem;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .result-value.empty {
+    color: var(--text-dim);
+    opacity: 0.4;
+  }
+
+  .clear-btn {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-dim);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .clear-btn:hover {
+    border-color: var(--text-dim);
+    color: var(--text);
+  }
+</style>
+  <style>
+    .home-nav { position: fixed; top: 0; left: 0; z-index: 9999; padding: 6px 14px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-bottom-right-radius: 8px; }
+    .home-nav a { color: rgba(255,255,255,0.75); text-decoration: none;
+      font-family: monospace; font-size: 0.8rem; letter-spacing: 0.06em; }
+    .home-nav a:hover { color: #fff; }
+    .studios-credit { position: fixed; bottom: 0; right: 0; z-index: 9999; padding: 5px 12px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-top-left-radius: 8px;
+      font-family: monospace; font-size: 0.7rem; color: rgba(255,255,255,0.4);
+      letter-spacing: 0.05em; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <nav class="home-nav"><a href="../index.html">&#8592; Projects</a></nav>
+  <div class="studios-credit">2357 Studios</div>
+
+<div class="container">
+  <h1><span class="icon"></span> Circle Calculator</h1>
+  <p class="subtitle">Enter any value to calculate the rest</p>
+
+  <div class="input-group">
+    <label>Radius</label>
+    <div class="input-row">
+      <input type="number" id="radius" placeholder="0" min="0" step="any" oninput="calc('r')">
+    </div>
+    <div class="formula">r</div>
+  </div>
+
+  <div class="input-group">
+    <label>Diameter</label>
+    <div class="input-row">
+      <input type="number" id="diameter" placeholder="0" min="0" step="any" oninput="calc('d')">
+    </div>
+    <div class="formula">d = 2r</div>
+  </div>
+
+  <div class="input-group">
+    <label>Circumference</label>
+    <div class="input-row">
+      <input type="number" id="circumference" placeholder="0" min="0" step="any" oninput="calc('c')">
+    </div>
+    <div class="formula">C = 2πr</div>
+  </div>
+
+  <div class="results">
+    <h2>Derived Values</h2>
+    <div class="result-row">
+      <span class="result-label">Area</span>
+      <span class="result-value" id="area">—</span>
+    </div>
+    <div class="result-row">
+      <span class="result-label">Arc Length (semicircle)</span>
+      <span class="result-value" id="arc-semi">—</span>
+    </div>
+    <div class="result-row">
+      <span class="result-label">Arc Length (quarter)</span>
+      <span class="result-value" id="arc-quarter">—</span>
+    </div>
+  </div>
+
+  <button class="clear-btn" onclick="clearAll()">Clear</button>
+</div>
+
+<script>
+  const rEl = document.getElementById('radius');
+  const dEl = document.getElementById('diameter');
+  const cEl = document.getElementById('circumference');
+  const areaEl = document.getElementById('area');
+  const arcSemiEl = document.getElementById('arc-semi');
+  const arcQuarterEl = document.getElementById('arc-quarter');
+
+  function fmt(n) {
+    if (isNaN(n) || !isFinite(n)) return '—';
+    return n % 1 === 0 && n < 1e6 ? n.toString() : parseFloat(n.toPrecision(10)).toString();
+  }
+
+  function calc(source) {
+    let r;
+    if (source === 'r') {
+      r = parseFloat(rEl.value);
+      if (isNaN(r) || r < 0) { clearResults(); return; }
+      dEl.value = fmt(r * 2);
+      cEl.value = fmt(2 * Math.PI * r);
+    } else if (source === 'd') {
+      const d = parseFloat(dEl.value);
+      if (isNaN(d) || d < 0) { clearResults(); return; }
+      r = d / 2;
+      rEl.value = fmt(r);
+      cEl.value = fmt(2 * Math.PI * r);
+    } else if (source === 'c') {
+      const c = parseFloat(cEl.value);
+      if (isNaN(c) || c < 0) { clearResults(); return; }
+      r = c / (2 * Math.PI);
+      rEl.value = fmt(r);
+      dEl.value = fmt(r * 2);
+    }
+
+    const area = Math.PI * r * r;
+    const circ = 2 * Math.PI * r;
+    areaEl.textContent = fmt(area);
+    areaEl.classList.remove('empty');
+    arcSemiEl.textContent = fmt(circ / 2);
+    arcSemiEl.classList.remove('empty');
+    arcQuarterEl.textContent = fmt(circ / 4);
+    arcQuarterEl.classList.remove('empty');
+  }
+
+  function clearResults() {
+    areaEl.textContent = '—'; areaEl.classList.add('empty');
+    arcSemiEl.textContent = '—'; arcSemiEl.classList.add('empty');
+    arcQuarterEl.textContent = '—'; arcQuarterEl.classList.add('empty');
+  }
+
+  function clearAll() {
+    rEl.value = ''; dEl.value = ''; cEl.value = '';
+    clearResults();
+  }
+</script>
+</body>
+</html>

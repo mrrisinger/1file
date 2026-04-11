@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Chase the Ace Ticket Checker",
+    "description": "Paste your Chase the Ace lottery ticket numbers and instantly check them against the winning number.",
+    "category": "utility",
+    "tags": ["lottery", "LottoAlaska", "tickets", "checker"],
+    "created": "2026-04-03",
+    "url": "projects/lottery-checker.html"
+  },
+  {
+    "name": "Circle Calculator",
+    "description": "Compute radius, diameter, circumference, and area from any one circle measurement.",
+    "category": "utility",
+    "tags": ["geometry", "math", "calculator"],
+    "created": "2026-04-05",
+    "url": "projects/circle-calculator.html"
+  },
+  {
+    "name": "3 Doors",
+    "description": "A 3-door survival game — pick a door each round; 2 are safe and 1 ends your streak.",
+    "category": "game",
+    "tags": ["luck", "probability", "survival"],
+    "created": "2026-04-07",
+    "url": "projects/door-game.html"
+  },
+  {
+    "name": "Game Scorer",
+    "description": "A flexible multi-player round-by-round scorer with customizable player names and round tracking.",
+    "category": "game",
+    "tags": ["scoring", "multiplayer", "rounds"],
+    "created": "2026-04-01",
+    "url": "projects/scorer.html"
+  },
+  {
+    "name": "League Scorer",
+    "description": "Track scores for a two-team, four-player bowling league series with handicap and per-game totals.",
+    "category": "utility",
+    "tags": ["bowling", "sports", "scoring", "handicap"],
+    "created": "2026-04-09",
+    "url": "projects/bowling-scorer.html"
+  },
+  {
+    "name": "Christmas Tree Reaction Trainer",
+    "description": "An NHRA drag-racing style reaction time trainer with Sport, Pro, and Super Pro staging modes.",
+    "category": "game",
+    "tags": ["reaction-time", "drag-racing", "NHRA", "reflex"],
+    "created": "2026-04-08",
+    "url": "projects/christmas-tree.html"
+  }
+]

@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Scorer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1916;
+    --surface2: #242320;
+    --border: #2e2d2a;
+    --text: #f0ece4;
+    --text-dim: #7a766e;
+    --accent: #c8a96e;
+    --accent-dim: #8a7248;
+    --danger: #c06050;
+    --green: #6a9e7a;
+    --radius: 12px;
+    --font-display: 'Fraunces', serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; flex-direction: column; flex: 1; }
+  .screen.active { display: flex; }
+
+  /* ── SETUP SCREEN ── */
+  .setup-header {
+    padding: 48px 24px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .setup-header h1 {
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: 36px;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+  .setup-header h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .setup-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .field-group { display: flex; flex-direction: column; gap: 10px; }
+  .field-label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .player-list { display: flex; flex-direction: column; gap: 8px; }
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    animation: slideIn 0.18s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .player-num {
+    font-size: 11px;
+    color: var(--text-dim);
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .player-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 15px;
+  }
+  .player-input::placeholder { color: var(--text-dim); }
+  .remove-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+  .remove-btn:active { color: var(--danger); }
+
+  .add-player-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    width: 100%;
+  }
+  .add-player-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  /* Segmented control */
+  .seg-control {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3px;
+    gap: 3px;
+  }
+  .seg-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    border-radius: 9px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 9px 6px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .seg-btn.active {
+    background: var(--surface2);
+    color: var(--accent);
+    border: 1px solid var(--border);
+  }
+
+  .limit-input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+  }
+  .limit-input-row label { color: var(--text-dim); font-size: 13px; flex: 1; }
+  .limit-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 18px;
+    width: 72px;
+    text-align: right;
+  }
+  .limit-input::placeholder { color: var(--text-dim); }
+
+  .error-msg {
+    font-size: 12px;
+    color: var(--danger);
+    display: none;
+    padding: 0 4px;
+  }
+  .error-msg.visible { display: block; }
+
+  .setup-footer {
+    padding: 16px 24px 32px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── PRIMARY BUTTON ── */
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 500;
+    padding: 16px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: opacity 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ── GAME SCREEN ── */
+  .game-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .game-title {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--accent);
+  }
+  .round-badge {
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+  }
+  .new-game-link {
+    font-size: 12px;
+    color: var(--text-dim);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    padding: 4px;
+    letter-spacing: 0.05em;
+  }
+  .new-game-link:active { color: var(--danger); }
+
+  /* Scoreboard */
+  .scoreboard {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .player-score-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+  }
+  .player-score-row.selected {
+    border-color: var(--accent);
+    background: var(--surface2);
+  }
+  .player-score-row.leading {
+    border-color: var(--accent-dim);
+  }
+  .player-name-score {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .ps-name {
+    font-size: 14px;
+    color: var(--text);
+  }
+  .ps-round-entry {
+    font-size: 12px;
+    color: var(--text-dim);
+    min-height: 16px;
+  }
+  .ps-round-entry.has-value { color: var(--accent); }
+  .ps-total {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    min-width: 64px;
+    text-align: right;
+  }
+  .player-score-row.selected .ps-total { color: var(--accent); }
+  .leader-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+  }
+  .player-score-row.leading .leader-dot { display: block; }
+
+  /* Limit progress bar */
+  .limit-bar-wrap {
+    padding: 0 16px 8px;
+    flex-shrink: 0;
+  }
+  .limit-bar-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .limit-bar-track {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .limit-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  /* Input panel */
+  .input-panel {
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .entry-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .entry-label { font-size: 11px; color: var(--text-dim); letter-spacing: 0.08em; }
+  .entry-value {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 60px;
+    text-align: right;
+  }
+  .entry-value.negative { color: var(--danger); }
+
+  .btn-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .inc-btn {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 500;
+    padding: 14px 6px;
+    cursor: pointer;
+    transition: background 0.1s, transform 0.08s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .inc-btn:active { background: var(--border); transform: scale(0.94); }
+
+  .util-row {
+    display: flex;
+    gap: 8px;
+  }
+  .util-btn {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 11px 6px;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s, transform 0.08s;
+    -webkit-tap-highlight-color: transparent;
+    letter-spacing: 0.05em;
+  }
+  .util-btn:active { background: var(--border); transform: scale(0.94); }
+  .util-btn.sign-btn { color: var(--accent); }
+  .util-btn.sign-btn.negative { color: var(--danger); }
+  .util-btn.clr-btn:active { color: var(--danger); }
+  .util-btn.undo-btn:active { color: var(--accent); }
+
+  .end-round-btn {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--accent-dim);
+    border-radius: var(--radius);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 14px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    transition: background 0.15s, transform 0.08s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .end-round-btn:active { background: var(--border); transform: scale(0.98); }
+
+  /* ── END SCREEN ── */
+  .end-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 40px 24px 32px;
+  }
+  .end-header {
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .end-winner {
+    font-family: var(--font-display);
+    font-size: 42px;
+    font-style: italic;
+    color: var(--accent);
+    margin-bottom: 4px;
+    line-height: 1.1;
+  }
+  .end-subtitle {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 32px;
+  }
+  .end-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 32px;
+  }
+  .end-table th {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: right;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .end-table th:first-child { text-align: left; }
+  .end-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    text-align: right;
+    color: var(--text-dim);
+  }
+  .end-table td:first-child { text-align: left; color: var(--text); }
+  .end-table tr.winner-row td { color: var(--accent); }
+  .end-table tr.winner-row td:first-child::after { content: " ✦"; color: var(--accent); }
+  .end-actions { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+  .btn-secondary {
+    width: 100%;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    padding: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-secondary:active { border-color: var(--accent); color: var(--accent); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 10px 20px;
+    font-size: 13px;
+    color: var(--text);
+    transition: transform 0.25s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 100;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+  <style>
+    .home-nav { position: fixed; top: 0; left: 0; z-index: 9999; padding: 6px 14px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-bottom-right-radius: 8px; }
+    .home-nav a { color: rgba(255,255,255,0.75); text-decoration: none;
+      font-family: monospace; font-size: 0.8rem; letter-spacing: 0.06em; }
+    .home-nav a:hover { color: #fff; }
+    .studios-credit { position: fixed; bottom: 0; right: 0; z-index: 9999; padding: 5px 12px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-top-left-radius: 8px;
+      font-family: monospace; font-size: 0.7rem; color: rgba(255,255,255,0.4);
+      letter-spacing: 0.05em; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <nav class="home-nav"><a href="../index.html">&#8592; Projects</a></nav>
+  <div class="studios-credit">2357 Studios</div>
+<div id="app">
+
+  <!-- SETUP SCREEN -->
+  <div class="screen active" id="screen-setup">
+    <div class="setup-header">
+      <h1>Game<br><em>Scorer</em></h1>
+    </div>
+    <div class="setup-body">
+
+      <div class="field-group">
+        <div class="field-label">Players</div>
+        <div class="player-list" id="player-list"></div>
+        <button class="add-player-btn" id="add-player-btn">+ Add player</button>
+        <div class="error-msg" id="name-error">Player names must be unique and non-empty.</div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Limit type</div>
+        <div class="seg-control">
+          <button class="seg-btn active" data-limit="none">None</button>
+          <button class="seg-btn" data-limit="score">Score limit</button>
+          <button class="seg-btn" data-limit="rounds">Round limit</button>
+        </div>
+      </div>
+
+      <div class="field-group" id="limit-input-group" style="display:none">
+        <div class="limit-input-row">
+          <label id="limit-input-label">Target score</label>
+          <input class="limit-input" id="limit-value" type="number" inputmode="numeric" placeholder="—" min="1">
+        </div>
+      </div>
+
+    </div>
+    <div class="setup-footer">
+      <button class="btn-primary" id="start-btn">Start Game</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div class="screen" id="screen-game">
+    <div class="game-topbar">
+      <div class="game-title">Scorer</div>
+      <div class="round-badge" id="round-badge">Round 1</div>
+      <button class="new-game-link" id="new-game-btn">New game</button>
+    </div>
+
+    <div class="limit-bar-wrap" id="limit-bar-wrap" style="display:none">
+      <div class="limit-bar-label">
+        <span id="limit-bar-label-text"></span>
+        <span id="limit-bar-pct"></span>
+      </div>
+      <div class="limit-bar-track"><div class="limit-bar-fill" id="limit-bar-fill"></div></div>
+    </div>
+
+    <div class="scoreboard" id="scoreboard"></div>
+
+    <div class="input-panel">
+      <div class="entry-display">
+        <span class="entry-label">THIS ROUND</span>
+        <span class="entry-value" id="entry-value">0</span>
+      </div>
+      <div class="btn-row" id="inc-btn-row"></div>
+      <div class="util-row">
+        <button class="util-btn sign-btn" id="sign-btn">−</button>
+        <button class="util-btn clr-btn" id="clr-btn">CLR</button>
+        <button class="util-btn undo-btn" id="undo-btn">UNDO</button>
+      </div>
+      <button class="end-round-btn" id="end-round-btn">END ROUND</button>
+    </div>
+  </div>
+
+  <!-- END SCREEN -->
+  <div class="screen" id="screen-end">
+    <div class="end-screen">
+      <div class="end-header">Game over</div>
+      <div class="end-winner" id="end-winner"></div>
+      <div class="end-subtitle" id="end-subtitle"></div>
+      <table class="end-table" id="end-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Total</th>
+            <th>Avg/Rd</th>
+            <th>Best</th>
+            <th>Worst</th>
+          </tr>
+        </thead>
+        <tbody id="end-tbody"></tbody>
+      </table>
+      <div class="end-actions">
+        <button class="btn-primary" id="play-again-btn">Play Again (same players)</button>
+        <button class="btn-secondary" id="new-game-end-btn">New Game</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let state = {
+  players: [],        // { name, total, rounds: [], currentEntry: 0, isNegative: false }
+  selectedIdx: 0,
+  round: 1,
+  limitType: 'none',  // 'none' | 'score' | 'rounds'
+  limitValue: 0,
+  history: [],        // for undo: [{playerIdx, score}]
+  increments: [1, 5, 10],
+};
+
+// ── SETUP ──
+const playerList = document.getElementById('player-list');
+const addPlayerBtn = document.getElementById('add-player-btn');
+const nameError = document.getElementById('name-error');
+const startBtn = document.getElementById('start-btn');
+const limitInputGroup = document.getElementById('limit-input-group');
+const limitInputLabel = document.getElementById('limit-input-label');
+const limitValueInput = document.getElementById('limit-value');
+let playerNames = ['Player 1', 'Player 2'];
+let limitType = 'none';
+
+function renderSetup() {
+  playerList.innerHTML = '';
+  playerNames.forEach((name, i) => {
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    row.innerHTML = `
+      <span class="player-num">${i + 1}</span>
+      <input class="player-input" type="text" value="${name}" placeholder="Player ${i+1}" maxlength="20">
+      ${playerNames.length > 2 ? `<button class="remove-btn" data-idx="${i}">×</button>` : ''}
+    `;
+    row.querySelector('.player-input').addEventListener('input', e => {
+      playerNames[i] = e.target.value;
+      validateNames();
+    });
+    const removeBtn = row.querySelector('.remove-btn');
+    if (removeBtn) removeBtn.addEventListener('click', () => {
+      playerNames.splice(i, 1);
+      renderSetup();
+    });
+    playerList.appendChild(row);
+  });
+  validateNames();
+}
+
+function validateNames() {
+  const names = playerNames.map(n => n.trim());
+  const hasEmpty = names.some(n => n === '');
+  const hasDup = names.length !== new Set(names).size;
+  const invalid = hasEmpty || hasDup;
+  nameError.textContent = hasEmpty ? 'All players need a name.' : 'Player names must be unique.';
+  nameError.classList.toggle('visible', invalid);
+  startBtn.disabled = invalid || names.length < 2;
+  return !invalid;
+}
+
+addPlayerBtn.addEventListener('click', () => {
+  if (playerNames.length >= 10) { showToast('Max 10 players'); return; }
+  playerNames.push('');
+  renderSetup();
+  setTimeout(() => {
+    const inputs = playerList.querySelectorAll('.player-input');
+    inputs[inputs.length - 1].focus();
+  }, 50);
+});
+
+// Limit type segmented control
+document.querySelectorAll('.seg-btn[data-limit]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.seg-btn[data-limit]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    limitType = btn.dataset.limit;
+    if (limitType === 'none') {
+      limitInputGroup.style.display = 'none';
+    } else {
+      limitInputGroup.style.display = 'flex';
+      limitInputLabel.textContent = limitType === 'score' ? 'Target score' : 'Number of rounds';
+      limitValueInput.placeholder = limitType === 'score' ? '100' : '10';
+    }
+  });
+});
+
+startBtn.addEventListener('click', () => {
+  if (!validateNames()) return;
+  const lv = parseInt(limitValueInput.value);
+  state.players = playerNames.map(n => ({
+    name: n.trim(), total: 0, rounds: [], currentEntry: 0, isNegative: false
+  }));
+  state.selectedIdx = 0;
+  state.round = 1;
+  state.limitType = limitType;
+  state.limitValue = (limitType !== 'none' && lv > 0) ? lv : 0;
+  state.history = [];
+  showScreen('game');
+  renderGame();
+});
+
+// ── GAME ──
+function renderGame() {
+  // topbar
+  document.getElementById('round-badge').textContent = `Round ${state.round}`;
+
+  // limit bar
+  const lbw = document.getElementById('limit-bar-wrap');
+  if (state.limitType !== 'none' && state.limitValue > 0) {
+    lbw.style.display = 'block';
+    const maxTotal = Math.max(...state.players.map(p => p.total), 0);
+    if (state.limitType === 'score') {
+      const pct = Math.min(100, Math.round(maxTotal / state.limitValue * 100));
+      document.getElementById('limit-bar-label-text').textContent = `Score limit: ${state.limitValue}`;
+      document.getElementById('limit-bar-pct').textContent = `${pct}%`;
+      document.getElementById('limit-bar-fill').style.width = pct + '%';
+    } else {
+      const pct = Math.min(100, Math.round((state.round - 1) / state.limitValue * 100));
+      document.getElementById('limit-bar-label-text').textContent = `Round ${state.round - 1} of ${state.limitValue}`;
+      document.getElementById('limit-bar-pct').textContent = `${pct}%`;
+      document.getElementById('limit-bar-fill').style.width = pct + '%';
+    }
+  } else {
+    lbw.style.display = 'none';
+  }
+
+  // scoreboard
+  const sb = document.getElementById('scoreboard');
+  sb.innerHTML = '';
+  const maxTotal = Math.max(...state.players.map(p => p.total));
+  state.players.forEach((p, i) => {
+    const isLeading = p.total === maxTotal && state.round > 1;
+    const row = document.createElement('div');
+    row.className = 'player-score-row' + (i === state.selectedIdx ? ' selected' : '') + (isLeading ? ' leading' : '');
+    const entryText = p.currentEntry !== 0
+      ? `this round: ${p.isNegative ? '-' : '+'}${p.currentEntry}`
+      : '';
+    row.innerHTML = `
+      <div class="leader-dot"></div>
+      <div class="player-name-score">
+        <div class="ps-name">${p.name}</div>
+        <div class="ps-round-entry ${p.currentEntry !== 0 ? 'has-value' : ''}">${entryText}</div>
+      </div>
+      <div class="ps-total">${p.total}</div>
+    `;
+    row.addEventListener('click', () => {
+      state.selectedIdx = i;
+      renderGame();
+    });
+    sb.appendChild(row);
+  });
+
+  // entry display
+  const p = state.players[state.selectedIdx];
+  const ev = document.getElementById('entry-value');
+  const displayVal = p.isNegative && p.currentEntry > 0 ? `-${p.currentEntry}` : `${p.currentEntry}`;
+  ev.textContent = displayVal;
+  ev.className = 'entry-value' + (p.isNegative && p.currentEntry > 0 ? ' negative' : '');
+
+  // sign btn
+  const sb2 = document.getElementById('sign-btn');
+  sb2.textContent = p.isNegative ? '+' : '−';
+  sb2.className = 'util-btn sign-btn' + (p.isNegative ? ' negative' : '');
+}
+
+// Build increment buttons
+const incRow = document.getElementById('inc-btn-row');
+state.increments.forEach(inc => {
+  const btn = document.createElement('button');
+  btn.className = 'inc-btn';
+  btn.textContent = `+${inc}`;
+  btn.addEventListener('click', () => {
+    const p = state.players[state.selectedIdx];
+    p.currentEntry += inc;
+    renderGame();
+  });
+  incRow.appendChild(btn);
+});
+
+document.getElementById('sign-btn').addEventListener('click', () => {
+  const p = state.players[state.selectedIdx];
+  p.isNegative = !p.isNegative;
+  renderGame();
+});
+
+document.getElementById('clr-btn').addEventListener('click', () => {
+  const p = state.players[state.selectedIdx];
+  p.currentEntry = 0;
+  p.isNegative = false;
+  renderGame();
+});
+
+document.getElementById('undo-btn').addEventListener('click', () => {
+  if (state.history.length === 0) { showToast('Nothing to undo'); return; }
+  const last = state.history.pop();
+  const p = state.players[last.playerIdx];
+  p.total -= last.score;
+  p.rounds.pop();
+  showToast('Undone');
+  renderGame();
+});
+
+document.getElementById('end-round-btn').addEventListener('click', () => {
+  // Commit all entries
+  state.players.forEach((p, i) => {
+    const score = p.isNegative ? -p.currentEntry : p.currentEntry;
+    p.rounds.push(score);
+    p.total += score;
+    state.history.push({ playerIdx: i, score });
+    p.currentEntry = 0;
+    p.isNegative = false;
+  });
+
+  // Check end conditions
+  if (checkEndCondition()) return;
+
+  state.round++;
+  renderGame();
+});
+
+function checkEndCondition() {
+  if (state.limitType === 'score' && state.limitValue > 0) {
+    if (state.players.some(p => p.total >= state.limitValue)) {
+      showEndScreen(); return true;
+    }
+  }
+  if (state.limitType === 'rounds' && state.limitValue > 0) {
+    if (state.round >= state.limitValue) {
+      showEndScreen(); return true;
+    }
+  }
+  return false;
+}
+
+document.getElementById('new-game-btn').addEventListener('click', () => {
+  if (confirm('End current game and start over?')) resetToSetup();
+});
+
+// ── END SCREEN ──
+function showEndScreen() {
+  const sorted = [...state.players].sort((a, b) => b.total - a.total);
+  const winner = sorted[0];
+  document.getElementById('end-winner').textContent = winner.name;
+  document.getElementById('end-subtitle').textContent =
+    `wins with ${winner.total} point${winner.total !== 1 ? 's' : ''} after ${state.round} round${state.round !== 1 ? 's' : ''}`;
+
+  const tbody = document.getElementById('end-tbody');
+  tbody.innerHTML = '';
+  sorted.forEach(p => {
+    const avg = p.rounds.length ? (p.rounds.reduce((a,b)=>a+b,0)/p.rounds.length).toFixed(1) : '—';
+    const best = p.rounds.length ? Math.max(...p.rounds) : '—';
+    const worst = p.rounds.length ? Math.min(...p.rounds) : '—';
+    const tr = document.createElement('tr');
+    if (p === winner) tr.className = 'winner-row';
+    tr.innerHTML = `<td>${p.name}</td><td>${p.total}</td><td>${avg}</td><td>${best}</td><td>${worst}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  showScreen('end');
+}
+
+document.getElementById('play-again-btn').addEventListener('click', () => {
+  const names = state.players.map(p => p.name);
+  state.players = names.map(n => ({ name: n, total: 0, rounds: [], currentEntry: 0, isNegative: false }));
+  state.selectedIdx = 0;
+  state.round = 1;
+  state.history = [];
+  showScreen('game');
+  renderGame();
+});
+
+document.getElementById('new-game-end-btn').addEventListener('click', resetToSetup);
+
+// ── UTILS ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+function resetToSetup() {
+  limitType = 'none';
+  document.querySelectorAll('.seg-btn[data-limit]').forEach(b => {
+    b.classList.toggle('active', b.dataset.limit === 'none');
+  });
+  limitInputGroup.style.display = 'none';
+  limitValueInput.value = '';
+  renderSetup();
+  showScreen('setup');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── INIT ──
+renderSetup();
+</script>
+</body>
+</html>
