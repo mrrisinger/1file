@@ -47,4 +47,12 @@
     "created": "2026-04-08",
     "url": "projects/christmas-tree.html"
   }
+  {
+    "name": "Initiative Tracker",
+    "description": "Initiative tracking with conditions. Can track rounds and adjust position as needed.",
+    "category": "utility",
+    "tags": ["initiative", "tracker", "RPG", "tool"],
+    "created": "2026-04-12",
+    "url": "projects/initiative-tracker.html"
+  }
 ]
