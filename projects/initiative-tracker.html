@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Initiative Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap');
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141418;
+    --surface2: #1c1c22;
+    --border: #2a2a35;
+    --accent: #c8a96e;
+    --accent-dim: #7a5f35;
+    --danger: #8b3a3a;
+    --danger-light: #c45050;
+    --text: #e8e0d0;
+    --text-dim: #7a7468;
+    --active-glow: rgba(200, 169, 110, 0.15);
+    --active-border: rgba(200, 169, 110, 0.6);
+    --round-color: #c8a96e;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  body {
+    font-family: 'Crimson Pro', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(200,169,110,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(139,58,58,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 0 90px 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    padding: 12px 16px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: rgba(13,13,15,0.95);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .header-left h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .round-display {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .round-display span {
+    color: var(--round-color);
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .btn-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .btn-icon:active {
+    transform: scale(0.92);
+    background: var(--surface);
+  }
+
+  .btn-icon.danger:active {
+    background: var(--danger);
+    border-color: var(--danger-light);
+    color: #fff;
+  }
+
+  /* Combat controls */
+  .combat-bar {
+    display: flex;
+    gap: 6px;
+    padding: 7px 12px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .btn {
+    flex: 1;
+    padding: 8px 6px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .btn:active {
+    transform: scale(0.96);
+  }
+
+  .btn.primary {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn.primary:active {
+    background: var(--accent);
+    color: #000;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text-dim);
+  }
+
+  .empty-state .icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  .empty-state p {
+    font-size: 16px;
+    font-style: italic;
+  }
+
+  /* Combatant list */
+  .combatant-list {
+    padding: 8px 10px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  /* Combatant card */
+  .combatant {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  .combatant.active {
+    border-color: var(--active-border);
+    background: var(--surface2);
+    box-shadow:
+      0 0 0 1px rgba(200,169,110,0.2),
+      0 4px 20px rgba(200,169,110,0.1),
+      inset 0 0 30px var(--active-glow);
+  }
+
+  .combatant.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 10px 0 0 10px;
+  }
+
+  .combatant.dragging {
+    opacity: 0.4;
+    transform: scale(0.97);
+  }
+
+  .combatant.drag-over {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(200,169,110,0.3);
+  }
+
+  /* Card layout */
+  .card-main {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0;
+  }
+
+  .drag-handle {
+    width: 32px;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    color: var(--text-dim);
+    font-size: 14px;
+    touch-action: none;
+    flex-shrink: 0;
+  }
+
+  .drag-handle:active {
+    cursor: grabbing;
+    color: var(--accent);
+  }
+
+  .init-badge {
+    width: 46px;
+    min-height: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
+    flex-shrink: 0;
+    cursor: pointer;
+    gap: 0;
+  }
+
+  .combatant.active .init-badge {
+    background: rgba(200,169,110,0.08);
+    border-right-color: rgba(200,169,110,0.2);
+  }
+
+  .init-value {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .init-label {
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    margin-top: 1px;
+    text-transform: uppercase;
+  }
+
+  .card-info {
+    flex: 1;
+    padding: 8px 8px 8px 10px;
+    min-width: 0;
+  }
+
+  .combatant-name {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  .combatant.active .combatant-name {
+    color: var(--accent);
+  }
+
+  .turn-indicator {
+    font-size: 10px;
+    color: var(--accent);
+    font-style: italic;
+    margin-top: 1px;
+    display: none;
+  }
+
+  .combatant.active .turn-indicator {
+    display: block;
+  }
+
+  .card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 8px 6px 0;
+    flex-shrink: 0;
+  }
+
+  .btn-sm {
+    width: 34px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.12s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .btn-sm:active {
+    transform: scale(0.88);
+  }
+
+  .btn-sm.remove:active {
+    background: var(--danger);
+    border-color: var(--danger-light);
+    color: #fff;
+  }
+
+  /* Inline edit input */
+  .edit-input {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    background: var(--bg);
+    border: 1px solid var(--accent-dim);
+    border-radius: 5px;
+    color: var(--accent);
+    padding: 3px 7px;
+    width: 100%;
+    outline: none;
+    min-width: 0;
+  }
+
+  .init-input {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    font-weight: 900;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--accent-dim);
+    color: var(--accent);
+    width: 44px;
+    text-align: center;
+    outline: none;
+    padding: 2px 0;
+  }
+
+  /* Add form panel */
+  .add-panel {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 14px 16px 24px;
+    z-index: 200;
+  }
+
+  .add-panel-inner {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .add-name-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Crimson Pro', serif;
+    font-size: 17px;
+    padding: 10px 14px;
+    outline: none;
+    min-width: 0;
+    transition: border-color 0.15s;
+  }
+
+  .add-name-input:focus {
+    border-color: var(--accent-dim);
+  }
+
+  .add-name-input::placeholder {
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  .add-init-input {
+    width: 64px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--accent);
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    font-weight: 900;
+    padding: 10px 8px;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .add-init-input:focus {
+    border-color: var(--accent-dim);
+  }
+
+  .add-init-input::placeholder {
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+
+  .btn-add {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .btn-add:active {
+    background: var(--accent);
+    color: #000;
+    transform: scale(0.92);
+  }
+
+  /* Manual reorder arrows on card */
+  .reorder-arrows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 3px;
+    flex-shrink: 0;
+  }
+
+  .arrow-btn {
+    width: 24px;
+    height: 22px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.12s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .arrow-btn:active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: scale(0.88);
+  }
+
+  .arrow-btn:disabled {
+    opacity: 0.2;
+    pointer-events: none;
+  }
+
+  /* Ornamental divider */
+  .turn-sep {
+    text-align: center;
+    padding: 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    font-family: 'Cinzel', serif;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .turn-sep.visible {
+    opacity: 1;
+  }
+
+  .turn-sep::before,
+  .turn-sep::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Animations */
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .combatant.new-entry {
+    animation: slideIn 0.25s ease-out;
+  }
+
+  @keyframes activePulse {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(200,169,110,0.2), 0 4px 20px rgba(200,169,110,0.1), inset 0 0 30px var(--active-glow); }
+    50% { box-shadow: 0 0 0 1px rgba(200,169,110,0.4), 0 4px 28px rgba(200,169,110,0.18), inset 0 0 40px rgba(200,169,110,0.2); }
+  }
+
+  .combatant.active {
+    animation: activePulse 2.5s ease-in-out infinite;
+  }
+
+  /* Sort button active state */
+  .btn-icon.sorted {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--active-glow);
+  }
+
+  /* Conditions strip */
+  .conditions-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    padding: 0 8px 7px 80px;
+  }
+
+  .conditions-strip:empty {
+    display: none;
+  }
+
+  .cond-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 7px 1px 5px;
+    border-radius: 20px;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.12s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .cond-pill:active { transform: scale(0.92); }
+
+  .cond-pill .pill-icon { font-size: 11px; line-height: 1; }
+
+  .cond-pill .pill-x {
+    font-size: 11px;
+    opacity: 0.6;
+    margin-left: 2px;
+    line-height: 1;
+  }
+
+  .cond-pill .pill-x:hover { opacity: 1; }
+
+  /* Per-condition colors */
+  .cond-blinded    { background: #2a2535; border-color: #6b5a8a; color: #b89fd4; }
+  .cond-charmed    { background: #2a1f2e; border-color: #8a4a7a; color: #d494c0; }
+  .cond-deafened   { background: #1e2430; border-color: #4a6080; color: #88aac8; }
+  .cond-exhaustion { background: #301e1e; border-color: #804040; color: #c88080; }
+  .cond-frightened { background: #2a1a10; border-color: #8a5020; color: #d49060; }
+  .cond-grappled   { background: #1e2820; border-color: #407050; color: #80b890; }
+  .cond-incapacitated { background: #301818; border-color: #903030; color: #d06060; }
+  .cond-invisible  { background: #1a1a2a; border-color: #404080; color: #8888c8; }
+  .cond-paralyzed  { background: #2a2010; border-color: #806020; color: #c8a040; }
+  .cond-petrified  { background: #222228; border-color: #606068; color: #a8a8b8; }
+  .cond-poisoned   { background: #182818; border-color: #307030; color: #60b860; }
+  .cond-prone      { background: #281e10; border-color: #705020; color: #b88040; }
+  .cond-restrained { background: #281810; border-color: #804020; color: #c07040; }
+  .cond-stunned    { background: #281828; border-color: #804880; color: #c080c0; }
+  .cond-unconscious{ background: #181820; border-color: #404060; color: #8080a8; }
+
+  /* Add condition button */
+  .btn-add-cond {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    border: 1px dashed var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    transition: all 0.12s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .btn-add-cond:active {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: scale(0.92);
+  }
+
+  /* Condition picker bottom sheet */
+  .sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .sheet-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .cond-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    width: 100%;
+    max-width: 480px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    z-index: 400;
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+
+  .cond-sheet.open {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .sheet-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 1;
+  }
+
+  .sheet-title {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+  }
+
+  .sheet-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-dim);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .sheet-close:active { background: var(--danger); color: #fff; }
+
+  .cond-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 14px 16px;
+  }
+
+  .cond-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    transition: all 0.12s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .cond-option.already-on {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .cond-option:active { transform: scale(0.95); }
+
+  .cond-option-icon { font-size: 20px; }
+
+  .cond-option-name {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--text);
+  }
+
+  /* Condition info modal */
+  .info-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s;
+  }
+
+  .info-modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .info-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 400px;
+    overflow: hidden;
+    transform: scale(0.92);
+    transition: transform 0.18s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .info-modal-overlay.open .info-modal {
+    transform: scale(1);
+  }
+
+  .info-modal-head {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .info-modal-icon { font-size: 28px; }
+
+  .info-modal-name {
+    font-family: 'Cinzel', serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+
+  .info-modal-body {
+    padding: 16px 20px;
+  }
+
+  .info-modal-body ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .info-modal-body li {
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--text);
+    padding-left: 16px;
+    position: relative;
+  }
+
+  .info-modal-body li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 11px;
+    top: 3px;
+  }
+
+  .info-modal-footer {
+    padding: 12px 20px 18px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .info-modal-footer button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-dim);
+    -webkit-user-select: none;
+    user-select: none;
+    transition: all 0.12s;
+  }
+
+  .info-modal-footer button:active { transform: scale(0.95); }
+
+  .info-modal-footer .btn-remove-cond {
+    background: var(--danger);
+    border-color: var(--danger-light);
+    color: #fff;
+  }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-left">
+      <h1>⚔ Initiative</h1>
+      <div class="round-display">ROUND <span id="roundNum">1</span></div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-icon" id="sortBtn" title="Sort by initiative" onclick="sortByInit()">↕</button>
+      <button class="btn-icon" id="clearBtn" title="Clear all" onclick="confirmClear()">🗑</button>
+    </div>
+  </header>
+
+  <div class="combat-bar">
+    <button class="btn" onclick="prevTurn()">◀ Prev</button>
+    <button class="btn primary" onclick="nextTurn()">Next Turn ▶</button>
+    <button class="btn" onclick="resetRound()">↺ Reset</button>
+  </div>
+
+  <div id="listContainer">
+    <div class="empty-state" id="emptyState">
+      <div class="icon">⚔</div>
+      <p>Add combatants below to begin tracking initiative.</p>
+    </div>
+    <div class="combatant-list" id="combatantList"></div>
+  </div>
+</div>
+
+<!-- Add panel -->
+<div class="add-panel" id="addPanel">
+  <div class="add-panel-inner">
+    <input class="add-name-input" id="nameInput" type="text" placeholder="Combatant name…" maxlength="40" autocomplete="off" autocorrect="off" spellcheck="false">
+    <input class="add-init-input" id="initInput" type="number" placeholder="Init" min="-20" max="99">
+    <button class="btn-add" onclick="addCombatant()">+</button>
+  </div>
+</div>
+
+<!-- Condition picker sheet -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeCondSheet()"></div>
+<div class="cond-sheet" id="condSheet">
+  <div class="sheet-header">
+    <span class="sheet-title">ADD CONDITION</span>
+    <button class="sheet-close" onclick="closeCondSheet()">✕</button>
+  </div>
+  <div class="cond-grid" id="condGrid"></div>
+</div>
+
+<!-- Condition info modal -->
+<div class="info-modal-overlay" id="infoOverlay" onclick="closeInfoModal()">
+  <div class="info-modal" onclick="event.stopPropagation()">
+    <div class="info-modal-head">
+      <span class="info-modal-icon" id="infoIcon"></span>
+      <span class="info-modal-name" id="infoName"></span>
+    </div>
+    <div class="info-modal-body">
+      <ul id="infoEffects"></ul>
+    </div>
+    <div class="info-modal-footer">
+      <button onclick="closeInfoModal()">Close</button>
+      <button class="btn-remove-cond" id="btnRemoveCond" onclick="removeCondFromModal()">Remove</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  // ── Condition data ──────────────────────────────────────────────
+  const CONDITIONS = {
+    blinded:    { icon:'👁️', name:'Blinded',    effects:['Automatically fails any ability check requiring sight.','Attack rolls against the creature have advantage; the creature\u2019s attack rolls have disadvantage.'] },
+    charmed:    { icon:'💞', name:'Charmed',    effects:['Cannot attack or target the charmer with harmful abilities or magic.','The charmer has advantage on Charisma checks against the creature.'] },
+    deafened:   { icon:'🔇', name:'Deafened',   effects:['Cannot hear; automatically fails checks requiring hearing.'] },
+    exhaustion: { icon:'😓', name:'Exhaustion',  effects:['Level 1: Disadvantage on ability checks.','Level 2: Speed halved.','Level 3: Disadvantage on attack rolls and saving throws.','Level 4: Hit point maximum halved.','Level 5: Speed reduced to 0.','Level 6: Death.'] },
+    frightened: { icon:'😱', name:'Frightened', effects:['Disadvantage on ability checks and attack rolls while the source of fear is in line of sight.','Cannot willingly move closer to the source of its fear.'] },
+    grappled:   { icon:'🤝', name:'Grappled',   effects:['Speed becomes 0, and it cannot benefit from any bonus to speed.','Ends if the grappler is incapacitated, or if the creature is moved out of reach.'] },
+    incapacitated:{ icon:'💫', name:'Incapacitated', effects:['Cannot take actions or reactions.'] },
+    invisible:  { icon:'👻', name:'Invisible',  effects:['Impossible to see without magic or a special sense.','Attack rolls against it have disadvantage; its attack rolls have advantage.','Counts as heavily obscured for hiding.'] },
+    paralyzed:  { icon:'⚡', name:'Paralyzed',  effects:['Incapacitated and cannot move or speak.','Automatically fails Strength and Dexterity saving throws.','Attack rolls against it have advantage.','Any attack that hits is a critical hit if the attacker is within 5 feet.'] },
+    petrified:  { icon:'🪨', name:'Petrified',  effects:['Transformed into solid inanimate substance. Weight increases by 10×.','Incapacitated, cannot move or speak, and is unaware of surroundings.','Attack rolls against it have advantage.','Automatically fails Strength and Dexterity saving throws.','Resistance to all damage; immune to poison and disease.'] },
+    poisoned:   { icon:'☠️', name:'Poisoned',   effects:['Disadvantage on attack rolls and ability checks.'] },
+    prone:      { icon:'⬇️', name:'Prone',      effects:['Only movement option is to crawl, unless it stands up.','Disadvantage on attack rolls.','Attack rolls within 5 ft have advantage; beyond 5 ft have disadvantage.'] },
+    restrained: { icon:'🕸️', name:'Restrained', effects:['Speed becomes 0; cannot benefit from bonuses to speed.','Attack rolls against it have advantage; its attack rolls have disadvantage.','Disadvantage on Dexterity saving throws.'] },
+    stunned:    { icon:'🌀', name:'Stunned',    effects:['Incapacitated, cannot move, and can speak only falteringly.','Automatically fails Strength and Dexterity saving throws.','Attack rolls against it have advantage.'] },
+    unconscious:{ icon:'💤', name:'Unconscious',effects:['Incapacitated, cannot move or speak, and is unaware of surroundings.','Drops held items and falls prone.','Automatically fails Strength and Dexterity saving throws.','Attack rolls against it have advantage.','Any attack that hits is a critical hit if the attacker is within 5 feet.'] },
+  };
+
+  // ── State ───────────────────────────────────────────────────────
+  let combatants = [];
+  let activeIndex = -1;
+  let round = 1;
+  let idCounter = 0;
+  let dragSrcIndex = null;
+  let touchDragIndex = null;
+  let touchDragEl = null;
+  let touchClone = null;
+  let touchStartY = 0;
+  let condSheetTarget = null;   // combatant index for picker
+  let infoModalTarget = null;   // { combatantIndex, condKey }
+
+
+  function save() {
+    try {
+      localStorage.setItem('initiative_v2', JSON.stringify({ combatants, activeIndex, round }));
+    } catch(e) {}
+  }
+
+  function load() {
+    try {
+      const d = JSON.parse(localStorage.getItem('initiative_v2') || 'null');
+      if (d) {
+        combatants = d.combatants || [];
+        combatants.forEach(c => { if (!c.conditions) c.conditions = []; });
+        activeIndex = d.activeIndex ?? -1;
+        round = d.round || 1;
+        idCounter = combatants.reduce((m, c) => Math.max(m, c.id || 0), 0) + 1;
+      }
+    } catch(e) {}
+  }
+
+  function buildCondPills(i, conditions) {
+    return conditions.map(function(k) {
+      var cd = CONDITIONS[k];
+      if (!cd) return '';
+      return '<span class="cond-pill cond-' + k + '" onclick="openInfoModal(' + i + ',\'' + k + '\')">'
+        + '<span class="pill-icon">' + cd.icon + '</span>' + cd.name
+        + '</span>';
+    }).join('');
+  }
+
+  function render() {
+    const list = document.getElementById('combatantList');
+    const empty = document.getElementById('emptyState');
+    document.getElementById('roundNum').textContent = round;
+
+    if (combatants.length === 0) {
+      empty.style.display = 'block';
+      list.innerHTML = '';
+      return;
+    }
+    empty.style.display = 'none';
+
+    list.innerHTML = '';
+    combatants.forEach((c, i) => {
+      const isActive = i === activeIndex;
+
+      const card = document.createElement('div');
+      card.className = 'combatant' + (isActive ? ' active' : '');
+      card.dataset.index = i;
+      card.draggable = true;
+
+      card.innerHTML = `
+        <div class="card-main">
+          <div class="drag-handle" title="Drag to reorder">⠿</div>
+          <div class="init-badge" onclick="editInit(${i})">
+            <div class="init-value" id="initVal-${i}">${c.init}</div>
+            <div class="init-label">INIT</div>
+          </div>
+          <div class="card-info">
+            <div class="combatant-name" id="nameVal-${i}" onclick="editName(${i})">${escHtml(c.name)}</div>
+            <div class="turn-indicator">▸ Active turn</div>
+          </div>
+          <div class="reorder-arrows">
+            <button class="arrow-btn" onclick="moveUp(${i})" ${i === 0 ? 'disabled' : ''} title="Move up">▲</button>
+            <button class="arrow-btn" onclick="moveDown(${i})" ${i === combatants.length - 1 ? 'disabled' : ''} title="Move down">▼</button>
+          </div>
+          <div class="card-actions">
+            <button class="btn-sm remove" onclick="removeCombatant(${i})" title="Remove">✕</button>
+          </div>
+        </div>
+        <div class="conditions-strip" id="cstrip-${i}">
+          ${buildCondPills(i, c.conditions||[])}
+          <button class="btn-add-cond" onclick="openCondSheet(${i})">&#xFF0B; condition</button>
+        </div>
+      `;
+
+      // Drag events (desktop)
+      card.addEventListener('dragstart', e => {
+        dragSrcIndex = i;
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => card.classList.add('dragging'), 10);
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        document.querySelectorAll('.combatant').forEach(el => el.classList.remove('drag-over'));
+      });
+      card.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        document.querySelectorAll('.combatant').forEach(el => el.classList.remove('drag-over'));
+        card.classList.add('drag-over');
+      });
+      card.addEventListener('drop', e => {
+        e.preventDefault();
+        if (dragSrcIndex !== null && dragSrcIndex !== i) {
+          moveToPosition(dragSrcIndex, i);
+        }
+        dragSrcIndex = null;
+      });
+
+      // Touch drag
+      const handle = card.querySelector('.drag-handle');
+      handle.addEventListener('touchstart', e => startTouchDrag(e, i, card), { passive: false });
+
+      list.appendChild(card);
+    });
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function addCombatant() {
+    const name = document.getElementById('nameInput').value.trim();
+    const init = parseInt(document.getElementById('initInput').value) || 0;
+    if (!name) {
+      document.getElementById('nameInput').focus();
+      return;
+    }
+    combatants.push({ id: idCounter++, name, init, conditions: [] });
+    document.getElementById('nameInput').value = '';
+    document.getElementById('initInput').value = '';
+    document.getElementById('nameInput').focus();
+    if (activeIndex === -1 && combatants.length === 1) activeIndex = 0;
+    render();
+    save();
+    // scroll to bottom
+    setTimeout(() => {
+      const list = document.getElementById('combatantList');
+      if (list.lastChild) list.lastChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  }
+
+  function removeCombatant(i) {
+    combatants.splice(i, 1);
+    if (activeIndex >= combatants.length) activeIndex = combatants.length - 1;
+    if (combatants.length === 0) activeIndex = -1;
+    render();
+    save();
+  }
+
+  function nextTurn() {
+    if (combatants.length === 0) return;
+    if (activeIndex === -1) { activeIndex = 0; }
+    else {
+      activeIndex++;
+      if (activeIndex >= combatants.length) {
+        activeIndex = 0;
+        round++;
+      }
+    }
+    render();
+    save();
+    scrollToActive();
+  }
+
+  function prevTurn() {
+    if (combatants.length === 0) return;
+    if (activeIndex <= 0) {
+      if (round > 1) { round--; activeIndex = combatants.length - 1; }
+      else { activeIndex = 0; }
+    } else {
+      activeIndex--;
+    }
+    render();
+    save();
+    scrollToActive();
+  }
+
+  function resetRound() {
+    activeIndex = combatants.length > 0 ? 0 : -1;
+    round = 1;
+    render();
+    save();
+  }
+
+  function scrollToActive() {
+    setTimeout(() => {
+      const cards = document.querySelectorAll('.combatant');
+      if (cards[activeIndex]) {
+        cards[activeIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 30);
+  }
+
+  function sortByInit() {
+    combatants.sort((a, b) => b.init - a.init);
+    activeIndex = combatants.length > 0 ? 0 : -1;
+    render();
+    save();
+    const btn = document.getElementById('sortBtn');
+    btn.classList.add('sorted');
+    setTimeout(() => btn.classList.remove('sorted'), 600);
+  }
+
+  function moveUp(i) {
+    if (i === 0) return;
+    [combatants[i-1], combatants[i]] = [combatants[i], combatants[i-1]];
+    if (activeIndex === i) activeIndex = i-1;
+    else if (activeIndex === i-1) activeIndex = i;
+    render();
+    save();
+  }
+
+  function moveDown(i) {
+    if (i >= combatants.length - 1) return;
+    [combatants[i], combatants[i+1]] = [combatants[i+1], combatants[i]];
+    if (activeIndex === i) activeIndex = i+1;
+    else if (activeIndex === i+1) activeIndex = i;
+    render();
+    save();
+  }
+
+  function moveToPosition(from, to) {
+    const item = combatants.splice(from, 1)[0];
+    combatants.splice(to, 0, item);
+    if (activeIndex === from) activeIndex = to;
+    else if (from < to && activeIndex > from && activeIndex <= to) activeIndex--;
+    else if (from > to && activeIndex >= to && activeIndex < from) activeIndex++;
+    render();
+    save();
+  }
+
+  function editName(i) {
+    const el = document.getElementById(`nameVal-${i}`);
+    if (!el) return;
+    const current = combatants[i].name;
+    el.innerHTML = `<input class="edit-input" type="text" value="${escHtml(current)}" maxlength="40" autocomplete="off" spellcheck="false">`;
+    const inp = el.querySelector('input');
+    inp.focus();
+    inp.select();
+    const commit = () => {
+      const val = inp.value.trim() || current;
+      combatants[i].name = val;
+      render();
+      save();
+    };
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { inp.blur(); }
+      if (e.key === 'Escape') { combatants[i].name = current; render(); }
+    });
+  }
+
+  function editInit(i) {
+    const el = document.getElementById(`initVal-${i}`);
+    if (!el) return;
+    const current = combatants[i].init;
+    el.outerHTML = `<input class="init-input" id="initVal-${i}" type="number" value="${current}" min="-20" max="99">`;
+    const inp = document.getElementById(`initVal-${i}`);
+    if (!inp) return;
+    inp.focus();
+    inp.select();
+    const commit = () => {
+      const val = parseInt(inp.value);
+      combatants[i].init = isNaN(val) ? current : val;
+      render();
+      save();
+    };
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') inp.blur();
+      if (e.key === 'Escape') { combatants[i].init = current; render(); }
+    });
+  }
+
+  function confirmClear() {
+    if (combatants.length === 0) return;
+    if (confirm('Clear all combatants and reset?')) {
+      combatants = [];
+      activeIndex = -1;
+      round = 1;
+      render();
+      save();
+    }
+  }
+
+  // Touch drag implementation
+  function startTouchDrag(e, index, card) {
+    e.preventDefault();
+    touchDragIndex = index;
+    touchDragEl = card;
+    touchStartY = e.touches[0].clientY;
+
+    const rect = card.getBoundingClientRect();
+    touchClone = card.cloneNode(true);
+    touchClone.style.cssText = `
+      position: fixed;
+      left: ${rect.left}px;
+      top: ${rect.top}px;
+      width: ${rect.width}px;
+      opacity: 0.85;
+      z-index: 9999;
+      pointer-events: none;
+      transition: none;
+      border-color: var(--accent);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    `;
+    document.body.appendChild(touchClone);
+    card.style.opacity = '0.3';
+
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend', onTouchEnd);
+  }
+
+  function onTouchMove(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const dy = touch.clientY - touchStartY;
+    const rect = touchDragEl.getBoundingClientRect();
+    touchClone.style.top = (rect.top + dy) + 'px';
+
+    // Find which card we're hovering over
+    const cards = document.querySelectorAll('.combatant');
+    cards.forEach(c => c.classList.remove('drag-over'));
+    const hovered = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.combatant');
+    if (hovered && hovered !== touchDragEl) {
+      hovered.classList.add('drag-over');
+    }
+  }
+
+  function onTouchEnd(e) {
+    document.removeEventListener('touchmove', onTouchMove);
+    document.removeEventListener('touchend', onTouchEnd);
+
+    const touch = e.changedTouches[0];
+    const hovered = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.combatant');
+
+    if (touchClone) { touchClone.remove(); touchClone = null; }
+    if (touchDragEl) touchDragEl.style.opacity = '';
+
+    if (hovered && hovered !== touchDragEl) {
+      const toIndex = parseInt(hovered.dataset.index);
+      if (!isNaN(toIndex) && toIndex !== touchDragIndex) {
+        moveToPosition(touchDragIndex, toIndex);
+      }
+    }
+
+    document.querySelectorAll('.combatant').forEach(c => c.classList.remove('drag-over'));
+    touchDragIndex = null;
+    touchDragEl = null;
+  }
+
+  // Enter key to add
+  document.getElementById('nameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('initInput').focus();
+  });
+  document.getElementById('initInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addCombatant();
+  });
+
+  // ── Condition Sheet ─────────────────────────────────────────────
+  function openCondSheet(i) {
+    condSheetTarget = i;
+    const c = combatants[i];
+    const grid = document.getElementById('condGrid');
+    grid.innerHTML = Object.entries(CONDITIONS).map(([key, cd]) => {
+      const has = (c.conditions||[]).includes(key);
+      return `<div class="cond-option${has ? ' already-on' : ''}" onclick="addCondition(${i},'${key}')">
+        <span class="cond-option-icon">${cd.icon}</span>
+        <span class="cond-option-name">${cd.name}</span>
+      </div>`;
+    }).join('');
+    document.getElementById('sheetOverlay').classList.add('open');
+    document.getElementById('condSheet').classList.add('open');
+    // Push add panel down so sheet appears above it cleanly
+    document.getElementById('addPanel') && (document.getElementById('addPanel').style.display = 'none');
+  }
+
+  function closeCondSheet() {
+    document.getElementById('sheetOverlay').classList.remove('open');
+    document.getElementById('condSheet').classList.remove('open');
+    if (document.getElementById('addPanel')) document.getElementById('addPanel').style.display = '';
+    condSheetTarget = null;
+  }
+
+  function addCondition(i, key) {
+    if (!combatants[i].conditions) combatants[i].conditions = [];
+    if (!combatants[i].conditions.includes(key)) {
+      combatants[i].conditions.push(key);
+      save();
+    }
+    closeCondSheet();
+    render();
+  }
+
+  // ── Info Modal ──────────────────────────────────────────────────
+  function openInfoModal(i, key) {
+    infoModalTarget = { i, key };
+    const cd = CONDITIONS[key];
+    document.getElementById('infoIcon').textContent = cd.icon;
+    document.getElementById('infoName').textContent = cd.name.toUpperCase();
+    document.getElementById('infoEffects').innerHTML = cd.effects.map(e => `<li>${e}</li>`).join('');
+    document.getElementById('infoOverlay').classList.add('open');
+  }
+
+  function closeInfoModal() {
+    document.getElementById('infoOverlay').classList.remove('open');
+    infoModalTarget = null;
+  }
+
+  function removeCondFromModal() {
+    if (!infoModalTarget) return;
+    const { i, key } = infoModalTarget;
+    combatants[i].conditions = (combatants[i].conditions||[]).filter(k => k !== key);
+    save();
+    closeInfoModal();
+    render();
+  }
+
+  load();
+  render();
+</script>
+</body>
+</html>
