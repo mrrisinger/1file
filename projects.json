@@ -49,7 +49,7 @@
   },
   {
     "name": "Initiative Tracker",
-    "description": "Initiative tracking with conditions. Can track rounds and adjust position as needed.",
+    "description": "Aninitiative tracker with condition tagging, round tracking, and manual reordering.",
     "category": "utility",
     "tags": ["initiative", "tracker", "RPG", "tool"],
     "created": "2026-04-12",
