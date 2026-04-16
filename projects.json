@@ -49,10 +49,18 @@
   },
   {
     "name": "Initiative Tracker",
-    "description": "Aninitiative tracker with condition tagging, round tracking, and manual reordering.",
+    "description": "An initiative tracker with condition tagging, round tracking, and manual reordering.",
     "category": "utility",
     "tags": ["initiative", "tracker", "RPG", "tool"],
     "created": "2026-04-12",
     "url": "projects/initiative-tracker.html"
+  },
+  {
+    "name": "Bar Math",
+    "description": "Test your ability to do weight plate math. Be fast and efficient for higher scores.",
+    "category": "game",
+    "tags": ["gym", "workout", "math", "tool"],
+    "created": "2026-04-15",
+    "url": "projects/gym-bar-math.html"
   }
 ]
