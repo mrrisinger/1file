@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Bar Math</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --card: #222;
+    --border: #333;
+    --gold: #e8b84b;
+    --gold-dark: #c99a30;
+    --red: #e84b4b;
+    --green: #4be87a;
+    --text: #f0ede6;
+    --muted: #888;
+    --plate-45: #c0392b;
+    --plate-35: #2980b9;
+    --plate-25: #f0e040;
+    --plate-10: #888;
+    --plate-5: #eee;
+    --plate-25-kg: #27ae60;
+    --plate-col: #1a1a1a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100dvh; padding: 24px; }
+  .screen.active { display: flex; }
+
+  /* ── START SCREEN ── */
+  #start-screen { gap: 32px; background: radial-gradient(ellipse at 50% 20%, #1e1a0f 0%, #0f0f0f 70%); }
+
+  .logo { text-align: center; }
+  .logo h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(56px, 16vw, 96px);
+    letter-spacing: 4px;
+    color: var(--gold);
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(232,184,75,0.3);
+  }
+  .logo p { font-size: 11px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-top: 6px; }
+
+  .round-chooser { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; max-width: 320px; }
+  .round-chooser label { font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .round-btns { display: flex; gap: 12px; width: 100%; }
+  .round-btn {
+    flex: 1;
+    padding: 18px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 2px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .round-btn.selected { border-color: var(--gold); color: var(--gold); background: rgba(232,184,75,0.08); }
+
+  .start-btn {
+    width: 100%;
+    max-width: 320px;
+    padding: 20px;
+    background: var(--gold);
+    color: #0f0f0f;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .start-btn.ready { opacity: 1; pointer-events: all; }
+  .start-btn:active { transform: scale(0.97); }
+
+  /* ── GAME SCREEN ── */
+  #game-screen {
+    padding: 0;
+    justify-content: flex-start;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  /* Top HUD */
+  .hud {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px 10px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .hud-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .hud-label { font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .hud-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--gold);
+    line-height: 1;
+  }
+  #timer-val { color: var(--text); }
+  #timer-val.urgent { color: var(--red); animation: pulse 0.5s infinite alternate; }
+  @keyframes pulse { from { opacity:1; } to { opacity:0.4; } }
+
+  /* Target weight */
+  .target-area {
+    width: 100%;
+    text-align: center;
+    padding: 12px 20px 8px;
+    flex-shrink: 0;
+  }
+  .target-label { font-size: 9px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+  .target-weight {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 14vw, 80px);
+    color: var(--text);
+    line-height: 1;
+  }
+  .target-weight span { color: var(--gold); }
+
+  /* Bar visual */
+  .bar-area {
+    width: 100%;
+    flex-shrink: 0;
+    padding: 0 8px;
+    position: relative;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bar-svg { width: 100%; max-width: 500px; height: 90px; overflow: visible; }
+
+  /* Message overlay */
+  .msg-bar {
+    width: 100%;
+    text-align: center;
+    padding: 6px 20px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    min-height: 28px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .msg-bar.error { color: var(--red); }
+  .msg-bar.success { color: var(--green); }
+
+  /* Plate buttons */
+  .plate-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 8px 16px 12px;
+    flex-shrink: 0;
+  }
+
+  .plate-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 8px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background: var(--card);
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    position: relative;
+    gap: 4px;
+  }
+  .plate-btn:active { transform: scale(0.93); }
+  .plate-btn.disabled { opacity: 0.25; pointer-events: none; }
+
+  .plate-icon { width: 44px; height: 44px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+  .plate-lbs {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .plate-count {
+    position: absolute;
+    top: 6px; right: 8px;
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .plate-count.active { color: var(--gold); }
+
+  /* Action buttons */
+  .actions {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+    padding: 0 16px 16px;
+    flex-shrink: 0;
+  }
+
+  .action-btn {
+    flex: 1;
+    padding: 16px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .action-btn:active { transform: scale(0.96); }
+  .action-btn.undo { border-color: var(--border); }
+  .action-btn.clear { border-color: var(--red); color: var(--red); }
+
+  .action-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+  /* ── END SCREEN ── */
+  #end-screen { gap: 24px; background: radial-gradient(ellipse at 50% 20%, #0d1a10 0%, #0f0f0f 70%); }
+
+  .end-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 14vw, 80px);
+    color: var(--gold);
+    letter-spacing: 4px;
+    text-align: center;
+  }
+
+  .score-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .score-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 20vw, 120px);
+    color: var(--text);
+    line-height: 1;
+  }
+  .score-label { font-size: 10px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+    max-width: 340px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--text); line-height:1; }
+  .stat-lbl { font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+
+  .play-again {
+    width: 100%;
+    max-width: 340px;
+    padding: 20px;
+    background: var(--gold);
+    color: #0f0f0f;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    cursor: pointer;
+  }
+  .play-again:active { transform: scale(0.97); }
+
+  /* High scores on start screen */
+  .hs-section { width: 100%; max-width: 320px; }
+  .hs-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+  .hs-tab {
+    flex: 1; padding: 8px; border-radius: 6px;
+    border: 2px solid var(--border); background: var(--surface);
+    color: var(--muted); font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 2px; cursor: pointer;
+    text-transform: uppercase; transition: all 0.15s;
+  }
+  .hs-tab.active { border-color: var(--gold); color: var(--gold); background: rgba(232,184,75,0.08); }
+  .hs-list { display: flex; flex-direction: column; gap: 6px; }
+  .hs-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 12px;
+  }
+  .hs-rank { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--muted); width: 20px; }
+  .hs-rank.gold { color: #e8b84b; }
+  .hs-rank.silver { color: #aaa; }
+  .hs-rank.bronze { color: #cd7f32; }
+  .hs-score { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--text); flex: 1; }
+  .hs-meta { font-size: 10px; color: var(--muted); text-align: right; line-height: 1.4; }
+  .hs-empty { text-align: center; color: var(--muted); font-size: 11px; letter-spacing: 1px; padding: 16px 0; }
+
+  /* New best banner */
+  .new-best {
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px;
+    color: var(--gold); letter-spacing: 3px; text-align: center;
+    padding: 4px 0; min-height: 28px;
+  }
+  .flash {
+    position: fixed; inset: 0; pointer-events: none; z-index: 100;
+    opacity: 0; transition: opacity 0.1s;
+  }
+  .flash.show { opacity: 0.18; }
+  .flash.red { background: var(--red); }
+  .flash.green { background: var(--green); }
+</style>
+</head>
+<body>
+
+<!-- Flash overlay -->
+<div class="flash" id="flash"></div>
+
+<!-- START SCREEN -->
+<div class="screen active" id="start-screen">
+  <div class="logo">
+    <h1>BAR<br>MATH</h1>
+    <p>Load the bar. Beat the clock.</p>
+  </div>
+  <div class="round-chooser">
+    <label>Choose rounds</label>
+    <div class="round-btns">
+      <button class="round-btn" data-rounds="5" onclick="selectRounds(5)">5</button>
+      <button class="round-btn" data-rounds="10" onclick="selectRounds(10)">10</button>
+    </div>
+  </div>
+  <button class="start-btn" id="start-btn" onclick="startGame()">Start →</button>
+  <div class="hs-section">
+    <div class="hs-tabs">
+      <button class="hs-tab active" onclick="showHsTab(5, this)">5 Rounds</button>
+      <button class="hs-tab" onclick="showHsTab(10, this)">10 Rounds</button>
+    </div>
+    <div class="hs-list" id="hs-list"></div>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen" id="game-screen">
+  <div class="hud">
+    <div class="hud-item">
+      <span class="hud-label">Round</span>
+      <span class="hud-val" id="round-val">1/5</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Time</span>
+      <span class="hud-val" id="timer-val">0.0</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Score</span>
+      <span class="hud-val" id="score-val">0</span>
+    </div>
+  </div>
+
+  <div class="target-area">
+    <div class="target-label">Target Weight</div>
+    <div class="target-weight" id="target-display">135 <span>lbs</span></div>
+  </div>
+
+  <div class="bar-area">
+    <svg class="bar-svg" id="bar-svg" viewBox="0 0 360 90" preserveAspectRatio="xMidYMid meet"></svg>
+  </div>
+
+  <div class="msg-bar" id="msg-bar"></div>
+
+  <div class="plate-grid" id="plate-grid"></div>
+
+  <div class="actions">
+    <button class="action-btn undo" id="undo-btn" onclick="undoPlate()" disabled>↩ Undo</button>
+    <button class="action-btn clear" id="clear-btn" onclick="clearPlates()" disabled>✕ Clear</button>
+  </div>
+</div>
+
+<!-- END SCREEN -->
+<div class="screen" id="end-screen">
+  <div class="end-title">Session<br>Complete</div>
+  <div class="new-best" id="new-best"></div>
+  <div class="score-display">
+    <div class="score-big" id="final-score">0</div>
+    <div class="score-label">Total Score</div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-val" id="stat-rounds">0</div>
+      <div class="stat-lbl">Rounds Won</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="stat-time">0s</div>
+      <div class="stat-lbl">Total Time</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="stat-plates">0</div>
+      <div class="stat-lbl">Avg Plates</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="stat-best">0</div>
+      <div class="stat-lbl">Best Round</div>
+    </div>
+  </div>
+  <button class="play-again" onclick="goHome()">Play Again</button>
+</div>
+
+<script>
+// ── PLATE CONFIG ──
+const PLATE_DEFS = [
+  { lbs: 45, color: '#2471a3', label: '45', border: '#1a5276' },
+  { lbs: 35, color: '#d4ac0d', label: '35', border: '#9a7d0a' },
+  { lbs: 25, color: '#27ae60', label: '25', border: '#1e8449' },
+  { lbs: 10, color: '#626567', label: '10', border: '#424949' },
+  { lbs: 5,  color: '#d5d8dc', label: '5',  border: '#aab7b8' },
+  { lbs: 2.5,color: '#784212', label: '2.5',border: '#512e5f' },
+];
+
+const BAR_WEIGHT = 45;
+
+// ── VALID TARGET WEIGHTS ──
+// Generate all reachable weights using available plates (any quantity each side)
+function generateValidWeights() {
+  const plates = [45, 35, 25, 10, 5, 2.5];
+  const reachable = new Set();
+  // BFS/brute force up to reasonable plate count per side
+  function recurse(remaining, used) {
+    const total = BAR_WEIGHT + remaining * 2;
+    if (total > BAR_WEIGHT) reachable.add(total);
+    if (used >= 6) return; // cap depth
+    for (const p of plates) {
+      recurse(remaining + p, used + 1);
+    }
+  }
+  // Actually build from scratch properly
+  const sideWeights = new Set([0]);
+  const queue = [0];
+  const visited = new Set([0]);
+  while (queue.length) {
+    const w = queue.shift();
+    for (const p of plates) {
+      const nw = Math.round((w + p) * 10) / 10;
+      if (nw <= 300 && !visited.has(nw)) {
+        visited.add(nw);
+        sideWeights.add(nw);
+        queue.push(nw);
+      }
+    }
+  }
+  const result = [];
+  for (const sw of sideWeights) {
+    if (sw === 0) continue;
+    const total = Math.round((BAR_WEIGHT + sw * 2) * 10) / 10;
+    if (total >= 65 && total <= 315) result.push(total);
+  }
+  return [...new Set(result)].sort((a, b) => a - b);
+}
+
+const VALID_WEIGHTS = generateValidWeights();
+
+// ── STATE ──
+let totalRounds = 5;
+let currentRound = 0;
+let totalScore = 0;
+let roundScores = [];
+let totalTime = 0;
+let totalPlatesUsed = 0;
+let roundsWon = 0;
+
+let targetWeight = 0;
+let platesAdded = []; // array of lbs values per side
+let timerInterval = null;
+let timerStart = 0;
+let elapsed = 0;
+let roundFailed = false;
+
+// ── ROUND SELECTION ──
+function selectRounds(n) {
+  totalRounds = n;
+  document.querySelectorAll('.round-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector(`[data-rounds="${n}"]`).classList.add('selected');
+  document.getElementById('start-btn').classList.add('ready');
+}
+
+// ── START GAME ──
+function startGame() {
+  currentRound = 0;
+  totalScore = 0;
+  roundScores = [];
+  totalTime = 0;
+  totalPlatesUsed = 0;
+  roundsWon = 0;
+  showScreen('game-screen');
+  nextRound();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── ROUND ──
+function nextRound() {
+  currentRound++;
+  platesAdded = [];
+  roundFailed = false;
+  elapsed = 0;
+
+  // Pick random target
+  targetWeight = VALID_WEIGHTS[Math.floor(Math.random() * VALID_WEIGHTS.length)];
+
+  // Update HUD
+  document.getElementById('round-val').textContent = `${currentRound}/${totalRounds}`;
+  document.getElementById('score-val').textContent = totalScore;
+  document.getElementById('target-display').innerHTML = `${targetWeight} <span>lbs</span>`;
+  document.getElementById('msg-bar').textContent = '';
+  document.getElementById('msg-bar').className = 'msg-bar';
+
+  renderPlateGrid();
+  renderBar();
+  updateButtons();
+  startTimer();
+}
+
+// ── TIMER ──
+function startTimer() {
+  clearInterval(timerInterval);
+  timerStart = Date.now();
+  timerInterval = setInterval(() => {
+    elapsed = (Date.now() - timerStart) / 1000;
+    const el = document.getElementById('timer-val');
+    el.textContent = elapsed.toFixed(1);
+    el.className = 'hud-val' + (elapsed > 20 ? ' urgent' : '');
+  }, 100);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  totalTime += elapsed;
+}
+
+// ── PLATE GRID ──
+function renderPlateGrid() {
+  const grid = document.getElementById('plate-grid');
+  grid.innerHTML = '';
+
+  PLATE_DEFS.forEach(p => {
+    const count = platesAdded.filter(x => x === p.lbs).length;
+    const btn = document.createElement('button');
+    btn.className = 'plate-btn';
+    btn.onclick = () => addPlate(p.lbs);
+
+    // Plate icon SVG
+    const plateW = p.lbs >= 25 ? 40 : p.lbs >= 10 ? 34 : 28;
+    const plateH = p.lbs >= 25 ? 40 : p.lbs >= 10 ? 30 : 24;
+    btn.innerHTML = `
+      <svg width="${plateW}" height="${plateH}" viewBox="0 0 ${plateW} ${plateH}">
+        <rect width="${plateW}" height="${plateH}" rx="4" fill="${p.color}" stroke="${p.border}" stroke-width="2"/>
+        <text x="${plateW/2}" y="${plateH/2+1}" text-anchor="middle" dominant-baseline="middle"
+          font-family="Bebas Neue, sans-serif" font-size="${p.lbs >= 10 ? 14 : 11}" fill="rgba(0,0,0,0.7)">${p.label}</text>
+      </svg>
+      <span class="plate-lbs">${p.label}</span>
+      <span class="plate-count ${count > 0 ? 'active' : ''}">×${count}</span>
+    `;
+    grid.appendChild(btn);
+  });
+}
+
+// ── ADD / UNDO / CLEAR ──
+function addPlate(lbs) {
+  platesAdded.push(lbs);
+  renderBar();
+  renderPlateGrid();
+  updateButtons();
+  checkRoundState();
+}
+
+function undoPlate() {
+  if (platesAdded.length === 0) return;
+  platesAdded.pop();
+  setMsg('');
+  renderBar();
+  renderPlateGrid();
+  updateButtons();
+}
+
+function clearPlates() {
+  platesAdded = [];
+  setMsg('');
+  renderBar();
+  renderPlateGrid();
+  updateButtons();
+}
+
+function updateButtons() {
+  const hasPlates = platesAdded.length > 0;
+  document.getElementById('undo-btn').disabled = !hasPlates;
+  document.getElementById('clear-btn').disabled = !hasPlates;
+}
+
+function lockButtons() {
+  document.getElementById('undo-btn').disabled = true;
+  document.getElementById('clear-btn').disabled = true;
+}
+
+// ── CHECK STATE AFTER EACH PLATE ──
+function checkRoundState() {
+  const sideWeight = platesAdded.reduce((a, b) => a + b, 0);
+  const total = Math.round((BAR_WEIGHT + sideWeight * 2) * 10) / 10;
+
+  if (total > targetWeight) {
+    // Over — fail
+    flash('red');
+    setMsg('Too heavy! Bar exceeded target.', 'error');
+    stopTimer();
+    roundFailed = true;
+    roundScores.push(0);
+    lockButtons();
+    setTimeout(() => advanceRound(), 1800);
+    return;
+  }
+
+  if (total === targetWeight) {
+    // Exact — win!
+    stopTimer();
+    flash('green');
+    const plateCount = platesAdded.length;
+    totalPlatesUsed += plateCount;
+    roundsWon++;
+
+    const minPlates = minPlatesFor(targetWeight);
+    const extraPlates = Math.max(0, plateCount - minPlates);
+    const roundScore = Math.max(50, Math.round(1000 - elapsed * 20 - extraPlates * 50));
+    totalScore += roundScore;
+    roundScores.push(roundScore);
+
+    setMsg(`+${roundScore} pts — ${plateCount} plate${plateCount !== 1 ? 's' : ''} per side`, 'success');
+    document.getElementById('score-val').textContent = totalScore;
+    lockButtons();
+    setTimeout(() => advanceRound(), 1500);
+  }
+}
+
+function advanceRound() {
+  if (currentRound >= totalRounds) {
+    endGame();
+  } else {
+    nextRound();
+  }
+}
+
+// ── MIN PLATES CALCULATION ──
+function minPlatesFor(target) {
+  const sideWeight = (target - BAR_WEIGHT) / 2;
+  const plates = [45, 35, 25, 10, 5, 2.5];
+  let rem = Math.round(sideWeight * 10) / 10;
+  let count = 0;
+  for (const p of plates) {
+    while (Math.round(rem * 10) / 10 >= p) {
+      rem = Math.round((rem - p) * 10) / 10;
+      count++;
+    }
+  }
+  return count;
+}
+
+// ── BAR RENDERING ──
+function renderBar() {
+  const svg = document.getElementById('bar-svg');
+  svg.innerHTML = '';
+  const W = 360, H = 90;
+  const cx = W / 2;
+  const barY = H / 2;
+  const barH = 10;
+  const collarW = 8;
+  const sleeveLen = 110;
+  const innerLen = 80;
+
+  // Center bar (knurled area)
+  rect(svg, cx - innerLen, barY - barH/2, innerLen*2, barH, '#555', '#3a3a3a', 2);
+  // Knurl texture lines
+  for (let i = -innerLen + 8; i < innerLen; i += 10) {
+    line(svg, cx + i, barY - barH/2 + 1, cx + i + 4, barY + barH/2 - 1, '#444', 1.5);
+  }
+
+  // Left sleeve
+  rect(svg, cx - innerLen - sleeveLen, barY - barH/2 + 1, sleeveLen, barH - 2, '#777', '#555', 1.5);
+  // Right sleeve
+  rect(svg, cx + innerLen, barY - barH/2 + 1, sleeveLen, barH - 2, '#777', '#555', 1.5);
+
+  // End caps
+  rect(svg, cx - innerLen - sleeveLen - 5, barY - barH/2 - 2, 5, barH + 4, '#999', '#666', 1);
+  rect(svg, cx + innerLen + sleeveLen, barY - barH/2 - 2, 5, barH + 4, '#999', '#666', 1);
+
+  // Collars
+  rect(svg, cx - innerLen - collarW, barY - barH/2 - 4, collarW, barH + 8, '#aaa', '#888', 2);
+  rect(svg, cx + innerLen, barY - barH/2 - 4, collarW, barH + 8, '#aaa', '#888', 2);
+
+  // Draw plates — sorted largest first
+  const sorted = [...platesAdded].sort((a, b) => b - a);
+
+  let leftX = cx - innerLen - collarW; // grows left
+  let rightX = cx + innerLen + collarW; // grows right
+
+  sorted.forEach(lbs => {
+    const def = PLATE_DEFS.find(p => p.lbs === lbs);
+    const pw = plateWidth(lbs);
+    const ph = plateHeight(lbs);
+    const py = barY - ph / 2;
+
+    // Left plate
+    rectEl(svg, leftX - pw, py, pw, ph, def.color, def.border, 2, 3);
+    text(svg, leftX - pw/2, barY, lbs >= 10 ? lbs.toString() : lbs.toString(), '#000', lbs >= 25 ? 9 : 7);
+
+    // Right plate
+    rectEl(svg, rightX, py, pw, ph, def.color, def.border, 2, 3);
+    text(svg, rightX + pw/2, barY, lbs >= 10 ? lbs.toString() : lbs.toString(), '#000', lbs >= 25 ? 9 : 7);
+
+    leftX -= pw;
+    rightX += pw;
+  });
+}
+
+function plateWidth(lbs) {
+  if (lbs >= 45) return 14;
+  if (lbs >= 35) return 12;
+  if (lbs >= 25) return 11;
+  if (lbs >= 10) return 9;
+  if (lbs >= 5)  return 8;
+  return 7;
+}
+
+function plateHeight(lbs) {
+  if (lbs >= 45) return 70;
+  if (lbs >= 35) return 62;
+  if (lbs >= 25) return 54;
+  if (lbs >= 10) return 44;
+  if (lbs >= 5)  return 34;
+  return 26;
+}
+
+// SVG helpers
+function rect(parent, x, y, w, h, fill, stroke, sw) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  el.setAttribute('x', x); el.setAttribute('y', y);
+  el.setAttribute('width', w); el.setAttribute('height', h);
+  el.setAttribute('fill', fill);
+  if (stroke) { el.setAttribute('stroke', stroke); el.setAttribute('stroke-width', sw); }
+  parent.appendChild(el);
+  return el;
+}
+function rectEl(parent, x, y, w, h, fill, stroke, sw, rx) {
+  const el = rect(parent, x, y, w, h, fill, stroke, sw);
+  if (rx) el.setAttribute('rx', rx);
+  return el;
+}
+function line(parent, x1, y1, x2, y2, stroke, sw) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  el.setAttribute('x1', x1); el.setAttribute('y1', y1);
+  el.setAttribute('x2', x2); el.setAttribute('y2', y2);
+  el.setAttribute('stroke', stroke); el.setAttribute('stroke-width', sw);
+  parent.appendChild(el);
+}
+function text(parent, x, y, txt, fill, size) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  el.setAttribute('x', x); el.setAttribute('y', y);
+  el.setAttribute('text-anchor', 'middle');
+  el.setAttribute('dominant-baseline', 'middle');
+  el.setAttribute('fill', fill);
+  el.setAttribute('font-family', 'Bebas Neue, sans-serif');
+  el.setAttribute('font-size', size);
+  el.textContent = txt;
+  parent.appendChild(el);
+}
+
+// ── FLASH ──
+function flash(color) {
+  const el = document.getElementById('flash');
+  el.className = `flash ${color} show`;
+  setTimeout(() => el.classList.remove('show'), 250);
+}
+
+// ── MSG ──
+function setMsg(msg, type='') {
+  const el = document.getElementById('msg-bar');
+  el.textContent = msg;
+  el.className = 'msg-bar' + (type ? ` ${type}` : '');
+}
+
+// ── HIGH SCORES ──
+const HS_KEY = 'barmath_hs';
+
+function loadScores() {
+  try { return JSON.parse(localStorage.getItem(HS_KEY)) || { 5: [], 10: [] }; }
+  catch { return { 5: [], 10: [] }; }
+}
+
+function saveScore(rounds, score, won, time) {
+  const data = loadScores();
+  if (!data[rounds]) data[rounds] = [];
+  data[rounds].push({ score, won, time: Math.round(time) });
+  data[rounds].sort((a, b) => b.score - a.score);
+  data[rounds] = data[rounds].slice(0, 5);
+  localStorage.setItem(HS_KEY, JSON.stringify(data));
+  return data[rounds].findIndex(e => e.score === score && e.won === won && e.time === Math.round(time));
+}
+
+function renderHsList(rounds) {
+  const data = loadScores();
+  const list = data[rounds] || [];
+  const el = document.getElementById('hs-list');
+  if (!el) return;
+  if (list.length === 0) {
+    el.innerHTML = '<div class="hs-empty">No scores yet — be the first!</div>';
+    return;
+  }
+  const rankClass = ['gold', 'silver', 'bronze'];
+  el.innerHTML = list.map((e, i) => `
+    <div class="hs-row">
+      <span class="hs-rank ${rankClass[i] || ''}">${i + 1}</span>
+      <span class="hs-score">${e.score}</span>
+      <span class="hs-meta">${e.won}/${rounds} won<br>${e.time}s</span>
+    </div>
+  `).join('');
+}
+
+let activeHsTab = 5;
+function showHsTab(rounds, btn) {
+  activeHsTab = rounds;
+  document.querySelectorAll('.hs-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderHsList(rounds);
+}
+
+// ── END GAME ──
+function endGame() {
+  const rank = saveScore(totalRounds, totalScore, roundsWon, totalTime);
+  showScreen('end-screen');
+  document.getElementById('final-score').textContent = totalScore;
+  document.getElementById('stat-rounds').textContent = `${roundsWon}/${totalRounds}`;
+  document.getElementById('stat-time').textContent = `${totalTime.toFixed(0)}s`;
+  const avgPlates = roundsWon > 0 ? (totalPlatesUsed / roundsWon).toFixed(1) : '—';
+  document.getElementById('stat-plates').textContent = avgPlates;
+  const best = roundScores.length > 0 ? Math.max(...roundScores) : 0;
+  document.getElementById('stat-best').textContent = best;
+  const newBestEl = document.getElementById('new-best');
+  newBestEl.textContent = rank === 0 ? '🏆 New High Score!' : rank > 0 && rank < 5 ? `#${rank + 1} All Time` : '';
+}
+
+function goHome() {
+  showScreen('start-screen');
+  document.querySelectorAll('.round-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('start-btn').classList.remove('ready');
+  renderHsList(activeHsTab);
+}
+
+// ── INIT ──
+renderBar();
+renderHsList(5);
+</script>
+</body>
+</html>
