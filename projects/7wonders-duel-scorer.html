@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>7 Wonders Duel Scorer | 2357 Studios</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parchment: #f2e8d0;
+    --parchment-dark: #e0d0b0;
+    --ink: #2a1f0e;
+    --ink-light: #5a4a2e;
+    --gold: #c8921a;
+    --gold-light: #f0c84a;
+    --red-deep: #8b1a1a;
+    --stone: #7a6a4a;
+    --blue:   #2e5fa3;
+    --green:  #2e7d32;
+    --yellow: #c8921a;
+    --purple: #6a3d9a;
+    --wonder: #5d4037;
+    --progress: #00695c;
+    --treasury: #f9a825;
+    --military: #b71c1c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: #1a1208;
+    min-height: 100vh;
+    font-family: 'Crimson Text', serif;
+    color: var(--ink);
+    overflow-x: hidden;
+  }
+
+  /* Textured background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(200,146,26,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(139,26,26,0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 0 60px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 28px 20px 20px;
+    background: linear-gradient(180deg, #2a1800 0%, #1a1208 100%);
+    border-bottom: 2px solid var(--gold);
+    position: relative;
+    overflow: hidden;
+  }
+  .header::after {
+    content: '⚱';
+    position: absolute;
+    font-size: 200px;
+    opacity: 0.03;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .header h1 {
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    font-size: clamp(18px, 5vw, 26px);
+    color: var(--gold-light);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    line-height: 1.1;
+    text-shadow: 0 0 20px rgba(200,146,26,0.4);
+  }
+  .header p {
+    font-size: 13px;
+    color: var(--parchment-dark);
+    opacity: 0.7;
+    margin-top: 4px;
+    font-style: italic;
+    letter-spacing: 0.05em;
+  }
+
+  /* Player name inputs */
+  .players-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: var(--parchment-dark);
+    border-bottom: 2px solid var(--gold);
+  }
+  .player-name-wrap {
+    padding: 10px 14px;
+    border-right: 1px solid var(--stone);
+    position: relative;
+  }
+  .player-name-wrap:last-child { border-right: none; }
+  .player-label {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--stone);
+    margin-bottom: 3px;
+  }
+  .player-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed var(--stone);
+    font-family: 'Cinzel', serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    outline: none;
+    padding: 2px 0;
+  }
+  .player-input::placeholder { color: var(--stone); opacity: 0.5; font-weight: 400; }
+
+  /* Score rows */
+  .score-table {
+    background: var(--parchment);
+  }
+
+  .section-divider {
+    background: var(--ink);
+    text-align: center;
+    padding: 5px 12px;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-light);
+  }
+
+  .score-row {
+    display: grid;
+    grid-template-columns: 44px 1fr 1fr;
+    border-bottom: 1px solid rgba(90,74,46,0.2);
+    min-height: 52px;
+    position: relative;
+  }
+  .score-row:last-child { border-bottom: none; }
+
+  .row-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 4px;
+    font-size: 18px;
+    gap: 2px;
+    border-right: 1px solid rgba(90,74,46,0.2);
+  }
+  .row-label {
+    font-family: 'Cinzel', serif;
+    font-size: 7px;
+    letter-spacing: 0.08em;
+    text-align: center;
+    color: var(--stone);
+    text-transform: uppercase;
+    line-height: 1.1;
+  }
+
+  .row-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 10px;
+    border-right: 1px solid rgba(90,74,46,0.2);
+  }
+  .row-cell:last-child { border-right: none; }
+
+  /* Color bands per category */
+  .row-blue   { background: rgba(46,95,163,0.08); }
+  .row-green  { background: rgba(46,125,50,0.08); }
+  .row-yellow { background: rgba(200,146,26,0.08); }
+  .row-purple { background: rgba(106,61,154,0.08); }
+  .row-wonder { background: rgba(93,64,55,0.08); }
+  .row-progress { background: rgba(0,105,92,0.08); }
+  .row-treasury { background: rgba(249,168,37,0.08); }
+  .row-military { background: rgba(183,28,28,0.08); }
+
+  .score-input {
+    width: 100%;
+    text-align: center;
+    border: none;
+    background: rgba(255,255,255,0.5);
+    border-radius: 6px;
+    font-family: 'Cinzel', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+    padding: 6px 4px;
+    outline: none;
+    -moz-appearance: textfield;
+    border: 1px solid rgba(90,74,46,0.2);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .score-input:focus {
+    background: rgba(255,255,255,0.9);
+    border-color: var(--gold);
+  }
+  .score-input::-webkit-inner-spin-button,
+  .score-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  select.score-input {
+    cursor: pointer;
+    font-size: 18px;
+  }
+
+  .treasury-hint {
+    font-size: 10px;
+    color: var(--stone);
+    font-style: italic;
+    text-align: center;
+    margin-top: 2px;
+    font-family: 'Crimson Text', serif;
+  }
+
+  .cell-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 2px;
+  }
+
+  /* Totals row */
+  .totals-row {
+    display: grid;
+    grid-template-columns: 44px 1fr 1fr;
+    background: var(--ink);
+    min-height: 56px;
+  }
+  .totals-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cinzel', serif;
+    font-size: 22px;
+    color: var(--gold-light);
+    border-right: 1px solid rgba(200,146,26,0.3);
+  }
+  .totals-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-right: 1px solid rgba(200,146,26,0.3);
+  }
+  .totals-cell:last-child { border-right: none; }
+  .total-value {
+    font-family: 'Cinzel', serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--gold-light);
+  }
+  .total-sub {
+    font-size: 11px;
+    color: var(--parchment-dark);
+    opacity: 0.6;
+    letter-spacing: 0.08em;
+    font-style: italic;
+  }
+
+  /* Calculate button */
+  .calc-btn {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 20px 16px 0;
+    padding: 16px;
+    background: linear-gradient(135deg, #8b1a1a, #c8921a);
+    border: none;
+    border-radius: 8px;
+    font-family: 'Cinzel', serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--parchment);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  .calc-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+  /* Result panel */
+  .result-panel {
+    display: none;
+    margin: 20px 16px 0;
+    background: var(--parchment);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    border: 2px solid var(--gold);
+  }
+  .result-panel.visible { display: block; }
+
+  .result-header {
+    background: linear-gradient(135deg, #2a1800, #1a1208);
+    padding: 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--gold);
+  }
+  .result-winner {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(15px, 4.5vw, 22px);
+    font-weight: 900;
+    color: var(--gold-light);
+    letter-spacing: 0.08em;
+  }
+  .result-subtitle {
+    font-size: 12px;
+    color: var(--parchment-dark);
+    opacity: 0.7;
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 16px 12px;
+    background: var(--parchment);
+  }
+  .chart-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .chart-player-name {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-align: center;
+  }
+  .chart-total {
+    font-family: 'Cinzel', serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--ink);
+  }
+  canvas.pie { width: 120px !important; height: 120px !important; }
+
+  .legend {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 0 16px 16px;
+  }
+  .legend-item {
+    display: grid;
+    grid-template-columns: 10px 1fr auto auto;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--ink-light);
+    font-family: 'Crimson Text', serif;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+  .legend-pts {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink);
+    text-align: right;
+    min-width: 20px;
+  }
+  .legend-pts-2 {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink);
+    text-align: right;
+    min-width: 20px;
+  }
+
+  .reset-btn {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 12px 16px 0;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--stone);
+    border-radius: 8px;
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    color: var(--parchment-dark);
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .reset-btn:active { opacity: 0.6; }
+
+  .icon-blue   { color: var(--blue); }
+  .icon-green  { color: var(--green); }
+  .icon-yellow { color: var(--yellow); }
+  .icon-purple { color: var(--purple); }
+  .icon-brown  { color: var(--wonder); }
+  .icon-teal   { color: var(--progress); }
+  .icon-gold   { color: var(--treasury); }
+  .icon-red    { color: var(--military); }
+
+  /* Expansion selector */
+  .expansion-bar {
+    background: #1e1608;
+    border-bottom: 2px solid var(--gold);
+    padding: 10px 14px;
+  }
+  .expansion-label {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .expansion-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .expansion-toggle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .expansion-toggle input[type="checkbox"] { display: none; }
+  .exp-chip {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1.5px solid var(--stone);
+    background: transparent;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--parchment-dark);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .expansion-toggle input:checked + .exp-chip {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .row-agora { background: rgba(230,230,230,0.1); }
+  .agora-divider {
+    background: #242010;
+    text-align: center;
+    padding: 5px 12px;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #b0a080;
+    border-top: 1px solid rgba(200,146,26,0.15);
+  }
+  .expansion-rows { display: none; }
+  .expansion-rows.active { display: block; }
+
+  .winner-highlight { animation: glow 1.5s ease-in-out infinite alternate; }
+  @keyframes glow {
+    from { text-shadow: 0 0 8px rgba(200,146,26,0.4); }
+    to   { text-shadow: 0 0 24px rgba(200,146,26,0.9), 0 0 4px #fff; }
+  }
+</style>
+  <style>
+    .home-nav { position: fixed; top: 0; left: 0; z-index: 9999; padding: 6px 14px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-bottom-right-radius: 8px; }
+    .home-nav a { color: rgba(255,255,255,0.75); text-decoration: none;
+      font-family: monospace; font-size: 0.8rem; letter-spacing: 0.06em; }
+    .home-nav a:hover { color: #fff; }
+    .studios-credit { position: fixed; bottom: 0; right: 0; z-index: 9999; padding: 5px 12px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-top-left-radius: 8px;
+      font-family: monospace; font-size: 0.7rem; color: rgba(255,255,255,0.4);
+      letter-spacing: 0.05em; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <nav class="home-nav"><a href="../index.html">&#8592; Projects</a></nav>
+  <div class="studios-credit">2357 Studios</div>
+<div class="app">
+
+  <div class="header">
+    <h1>7 Wonders Duel</h1>
+    <p>End of Game Scorer</p>
+  </div>
+
+  <!-- Expansion selector -->
+  <div class="expansion-bar">
+    <div class="expansion-label">Expansions</div>
+    <div class="expansion-options">
+      <label class="expansion-toggle">
+        <input type="checkbox" id="exp_agora" onchange="toggleExpansion()">
+        <span class="exp-chip">Agora</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Player names -->
+  <div class="players-bar">
+    <div class="player-name-wrap">
+      <div class="player-label">Player 1</div>
+      <input class="player-input" id="name1" type="text" placeholder="City Name" maxlength="16">
+    </div>
+    <div class="player-name-wrap">
+      <div class="player-label">Player 2</div>
+      <input class="player-input" id="name2" type="text" placeholder="City Name" maxlength="16">
+    </div>
+  </div>
+
+  <!-- Score table -->
+  <div class="score-table">
+
+    <div class="section-divider">Buildings</div>
+
+    <!-- Blue -->
+    <div class="score-row row-blue">
+      <div class="row-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22"><rect x="1" y="1" width="20" height="20" rx="3" fill="#2e5fa3" stroke="#1a3a6b" stroke-width="1.5"/></svg>
+        <span class="row-label">Civilian</span>
+      </div>
+      <div class="row-cell">
+        <input class="score-input" type="number" id="p1_blue" min="0" placeholder="0">
+      </div>
+      <div class="row-cell">
+        <input class="score-input" type="number" id="p2_blue" min="0" placeholder="0">
+      </div>
+    </div>
+
+    <!-- Green -->
+    <div class="score-row row-green">
+      <div class="row-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22"><rect x="1" y="1" width="20" height="20" rx="3" fill="#2e7d32" stroke="#1b5e20" stroke-width="1.5"/></svg>
+        <span class="row-label">Science</span>
+      </div>
+      <div class="row-cell">
+        <input class="score-input" type="number" id="p1_green" min="0" placeholder="0">
+      </div>
+      <div class="row-cell">
+        <input class="score-input" type="number" id="p2_green" min="0" placeholder="0">
+      </div>
+    </div>
+
+    <!-- Yellow -->
+    <div class="score-row row-yellow">
+      <div class="row-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22"><rect x="1" y="1" width="20" height="20" rx="3" fill="#f9a825" stroke="#c8921a" stroke-width="1.5"/></svg>
+        <span class="row-label">Commercial</span>
+      </div>
+      <div class="row-cell">
+        <input class="score-input" type="number" id="p1_yellow" min="0" placeholder="0">
+      </div>
+      <div class="row-cell">
+        <input class="score-input" type="number" id="p2_yellow" min="0" placeholder="0">
+      </div>
+    </div>
+
+    <!-- Purple -->
+    <div class="score-row row-purple">
+      <div class="row-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22"><rect x="1" y="1" width="20" height="20" rx="3" fill="#6a3d9a" stroke="#4a2570" stroke-width="1.5"/></svg>
+        <span class="row-label">Guilds</span>
+      </div>
+      <div class="row-cell">
+        <input class="score-input" type="number" id="p1_purple" min="0" placeholder="0">
+      </div>
+      <div class="row-cell">
+        <input class="score-input" type="number" id="p2_purple" min="0" placeholder="0">
+      </div>
+    </div>
+
+    <div class="section-divider">Wonders & Progress</div>
+
+    <!-- Wonders -->
+    <div class="score-row row-wonder">
+      <div class="row-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22"><polygon points="11,2 21,20 1,20" fill="#c8a040" stroke="#8b6914" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span class="row-label">Wonders</span>
+      </div>
+      <div class="row-cell">
+        <input class="score-input" type="number" id="p1_wonder" min="0" placeholder="0">
+      </div>
+      <div class="row-cell">
+        <input class="score-input" type="number" id="p2_wonder" min="0" placeholder="0">
+      </div>
+    </div>
+
+    <!-- Progress tokens -->
+    <div class="score-row row-progress">
+      <div class="row-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#00796b" stroke="#004d40" stroke-width="1.5"/></svg>
+        <span class="row-label">Progress</span>
+      </div>
+      <div class="row-cell">
+        <input class="score-input" type="number" id="p1_progress" min="0" placeholder="0">
+      </div>
+      <div class="row-cell">
+        <input class="score-input" type="number" id="p2_progress" min="0" placeholder="0">
+      </div>
+    </div>
+
+    <div class="section-divider">Treasury & Military</div>
+
+    <!-- Treasury (coins) -->
+    <div class="score-row row-treasury">
+      <div class="row-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#f9a825" stroke="#c8921a" stroke-width="1.5"/><circle cx="11" cy="11" r="6" fill="none" stroke="#c8921a" stroke-width="1"/></svg>
+        <span class="row-label">Coins</span>
+      </div>
+      <div class="row-cell">
+        <div class="cell-stack">
+          <input class="score-input" type="number" id="p1_coins" min="0" placeholder="0">
+          <div class="treasury-hint" id="p1_coin_pts">= 0 pts</div>
+        </div>
+      </div>
+      <div class="row-cell">
+        <div class="cell-stack">
+          <input class="score-input" type="number" id="p2_coins" min="0" placeholder="0">
+          <div class="treasury-hint" id="p2_coin_pts">= 0 pts</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Military -->
+    <div class="score-row row-military">
+      <div class="row-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22"><rect x="1" y="1" width="20" height="20" rx="3" fill="#c62828" stroke="#8b1a1a" stroke-width="1.5"/></svg>
+        <span class="row-label">Military</span>
+      </div>
+      <div class="row-cell">
+        <select class="score-input" id="p1_military">
+          <option value="0">0</option>
+          <option value="2">2</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+        </select>
+      </div>
+      <div class="row-cell">
+        <select class="score-input" id="p2_military">
+          <option value="0">0</option>
+          <option value="2">2</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Agora expansion rows -->
+    <div class="expansion-rows" id="agora_rows">
+      <div class="agora-divider">Agora Expansion</div>
+      <div class="score-row row-agora">
+        <div class="row-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22"><rect x="1" y="1" width="20" height="20" rx="3" fill="#e8e8e8" stroke="#aaaaaa" stroke-width="1.5"/></svg>
+          <span class="row-label">Chambers</span>
+        </div>
+        <div class="row-cell">
+          <input class="score-input" type="number" id="p1_chambers" min="0" placeholder="0">
+        </div>
+        <div class="row-cell">
+          <input class="score-input" type="number" id="p2_chambers" min="0" placeholder="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Live totals -->
+    <div class="totals-row">
+      <div class="totals-icon">Σ</div>
+      <div class="totals-cell">
+        <div class="total-value" id="live_total1">0</div>
+        <div class="total-sub" id="live_name1">Player 1</div>
+      </div>
+      <div class="totals-cell">
+        <div class="total-value" id="live_total2">0</div>
+        <div class="total-sub" id="live_name2">Player 2</div>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="calc-btn" onclick="showResult()">Declare Victor</button>
+
+  <!-- Result panel -->
+  <div class="result-panel" id="result_panel">
+    <div class="result-header">
+      <div class="result-winner" id="result_winner"></div>
+      <div class="result-subtitle" id="result_subtitle"></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-wrap">
+        <div class="chart-player-name" id="chart_name1">Player 1</div>
+        <canvas id="pie1" width="120" height="120" class="pie"></canvas>
+        <div class="chart-total" id="chart_total1">0</div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-player-name" id="chart_name2">Player 2</div>
+        <canvas id="pie2" width="120" height="120" class="pie"></canvas>
+        <div class="chart-total" id="chart_total2">0</div>
+      </div>
+    </div>
+    <div class="legend" id="legend_area"></div>
+  </div>
+
+  <button class="reset-btn" onclick="resetAll()">↺ New Game</button>
+
+</div>
+
+<script>
+const CATEGORIES = [
+  { id: 'blue',     label: 'Civilian',  color: '#2e5fa3' },
+  { id: 'green',    label: 'Science',   color: '#2e7d32' },
+  { id: 'yellow',   label: 'Commercial',color: '#c8921a' },
+  { id: 'purple',   label: 'Guilds',    color: '#6a3d9a' },
+  { id: 'wonder',   label: 'Wonders',   color: '#795548' },
+  { id: 'progress', label: 'Progress',  color: '#00796b' },
+  { id: 'coins',    label: 'Treasury',  color: '#f9a825', isCoin: true },
+  { id: 'military', label: 'Military',  color: '#c62828' },
+  { id: 'chambers', label: 'Chambers',  color: '#b0b0b0', expansion: 'agora' },
+];
+
+function activeCategories() {
+  const agoraOn = document.getElementById('exp_agora').checked;
+  return CATEGORIES.filter(c => !c.expansion || (c.expansion === 'agora' && agoraOn));
+}
+
+function toggleExpansion() {
+  const agoraOn = document.getElementById('exp_agora').checked;
+  document.getElementById('agora_rows').classList.toggle('active', agoraOn);
+  if (!agoraOn) {
+    document.getElementById('p1_chambers').value = '';
+    document.getElementById('p2_chambers').value = '';
+  }
+  updateLive();
+}
+
+function getVal(id) {
+  const el = document.getElementById(id);
+  return parseFloat(el.value) || 0;
+}
+
+function coinPts(n) { return Math.floor(n / 3); }
+
+function calcTotal(p) {
+  let t = 0;
+  activeCategories().forEach(c => {
+    if (c.isCoin) t += coinPts(getVal(`p${p}_coins`));
+    else t += getVal(`p${p}_${c.id}`);
+  });
+  return t;
+}
+
+function updateLive() {
+  const n1 = document.getElementById('name1').value || 'Player 1';
+  const n2 = document.getElementById('name2').value || 'Player 2';
+  document.getElementById('live_name1').textContent = n1;
+  document.getElementById('live_name2').textContent = n2;
+  document.getElementById('live_total1').textContent = calcTotal(1);
+  document.getElementById('live_total2').textContent = calcTotal(2);
+  // coin hints
+  ['1','2'].forEach(p => {
+    const coins = getVal(`p${p}_coins`);
+    document.getElementById(`p${p}_coin_pts`).textContent = `= ${coinPts(coins)} pts`;
+  });
+}
+
+// Wire all inputs
+document.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('input', updateLive);
+  el.addEventListener('change', updateLive);
+});
+
+function drawPie(canvasId, data, colors) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const total = data.reduce((a,b) => a+b, 0);
+  const cx = canvas.width / 2, cy = canvas.height / 2;
+  const r = Math.min(cx, cy) - 4;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (total === 0) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#e0d0b0';
+    ctx.fill();
+    return;
+  }
+
+  let start = -Math.PI / 2;
+  data.forEach((val, i) => {
+    if (val <= 0) return;
+    const slice = (val / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, start + slice);
+    ctx.closePath();
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+    ctx.strokeStyle = '#f2e8d0';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    start += slice;
+  });
+
+  // center hole
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.38, 0, Math.PI * 2);
+  ctx.fillStyle = '#f2e8d0';
+  ctx.fill();
+}
+
+function showResult() {
+  const n1 = document.getElementById('name1').value || 'Player 1';
+  const n2 = document.getElementById('name2').value || 'Player 2';
+
+  const cats = activeCategories();
+  const scores1 = cats.map(c => c.isCoin ? coinPts(getVal('p1_coins')) : getVal(`p1_${c.id}`));
+  const scores2 = cats.map(c => c.isCoin ? coinPts(getVal('p2_coins')) : getVal(`p2_${c.id}`));
+  const total1 = scores1.reduce((a,b)=>a+b,0);
+  const total2 = scores2.reduce((a,b)=>a+b,0);
+  const colors = cats.map(c => c.color);
+
+  // Draw pies
+  drawPie('pie1', scores1, colors);
+  drawPie('pie2', scores2, colors);
+
+  document.getElementById('chart_name1').textContent = n1;
+  document.getElementById('chart_name2').textContent = n2;
+  document.getElementById('chart_total1').textContent = total1 + ' pts';
+  document.getElementById('chart_total2').textContent = total2 + ' pts';
+
+  // Determine winner
+  let winnerText, subtitleText;
+  if (total1 > total2) {
+    winnerText = `⚜ ${n1} Victorious ⚜`;
+    subtitleText = `${total1} – ${total2}`;
+  } else if (total2 > total1) {
+    winnerText = `⚜ ${n2} Victorious ⚜`;
+    subtitleText = `${total2} – ${total1}`;
+  } else {
+    // Tiebreaker: blue cards
+    const blue1 = getVal('p1_blue'), blue2 = getVal('p2_blue');
+    if (blue1 > blue2) {
+      winnerText = `⚜ ${n1} Victorious ⚜`;
+      subtitleText = `Tied ${total1}–${total2} · Blue card tiebreaker`;
+    } else if (blue2 > blue1) {
+      winnerText = `⚜ ${n2} Victorious ⚜`;
+      subtitleText = `Tied ${total1}–${total2} · Blue card tiebreaker`;
+    } else {
+      winnerText = `⚜ Shared Victory ⚜`;
+      subtitleText = `Both cities tied at ${total1} points`;
+    }
+  }
+
+  const wEl = document.getElementById('result_winner');
+  wEl.textContent = winnerText;
+  wEl.className = 'result-winner winner-highlight';
+  document.getElementById('result_subtitle').textContent = subtitleText;
+
+  // Legend
+  const leg = document.getElementById('legend_area');
+  leg.innerHTML = '';
+  cats.forEach((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'legend-item';
+    row.innerHTML = `
+      <div class="legend-dot" style="background:${c.color}"></div>
+      <span>${c.label}</span>
+      <span class="legend-pts">${scores1[i]}</span>
+      <span class="legend-pts-2">${scores2[i]}</span>
+    `;
+    leg.appendChild(row);
+  });
+
+  document.getElementById('result_panel').classList.add('visible');
+  document.getElementById('result_panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetAll() {
+  document.querySelectorAll('input.score-input').forEach(el => el.value = '');
+  document.querySelectorAll('select.score-input').forEach(el => el.value = '0');
+  document.getElementById('exp_agora').checked = false;
+  document.getElementById('agora_rows').classList.remove('active');
+  document.getElementById('p1_coin_pts').textContent = '= 0 pts';
+  document.getElementById('p2_coin_pts').textContent = '= 0 pts';
+  document.getElementById('live_total1').textContent = '0';
+  document.getElementById('live_total2').textContent = '0';
+  document.getElementById('result_panel').classList.remove('visible');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+updateLive();
+</script>
+</body>
+</html>

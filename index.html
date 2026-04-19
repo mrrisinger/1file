@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Projects</title>
+  <title>Projects | 2357 Studios</title>
+  <meta name="description" content="A portfolio of interactive games, tools, and utilities built by 2357 Studios.">
   <style>
     :root {
       --bg: #0f0f0f;
@@ -146,7 +147,7 @@
       text-decoration: none;
     }
 
-    .card-title:hover { color: var(--accent); }
+    .card:hover .card-title { color: var(--accent); }
 
     .badge {
       font-size: 0.7rem;
@@ -279,9 +280,9 @@
     function buildCard(p) {
       const tags = (p.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
       return `
-        <article class="card">
+        <a class="card" href="${escapeHtml(p.url)}">
           <div class="card-header">
-            <a class="card-title" href="${escapeHtml(p.url)}">${escapeHtml(p.name)}</a>
+            <span class="card-title">${escapeHtml(p.name)}</span>
             <span class="badge" data-category="${escapeHtml(p.category)}">${escapeHtml(p.category)}</span>
           </div>
           <p class="card-desc">${escapeHtml(p.description)}</p>
@@ -289,7 +290,7 @@
             <div class="card-tags">${tags}</div>
             <time class="card-date" datetime="${escapeHtml(p.created)}">${formatDate(p.created)}</time>
           </div>
-        </article>`;
+        </a>`;
     }
 
     function render() {

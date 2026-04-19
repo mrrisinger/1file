@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Initiative Tracker</title>
+<title>Initiative Tracker | 2357 Studios</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap');
 
@@ -881,8 +881,23 @@
   }
 
 </style>
+  <style>
+    .home-nav { position: fixed; top: 0; left: 0; z-index: 9999; padding: 6px 14px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-bottom-right-radius: 8px; }
+    .home-nav a { color: rgba(255,255,255,0.75); text-decoration: none;
+      font-family: monospace; font-size: 0.8rem; letter-spacing: 0.06em; }
+    .home-nav a:hover { color: #fff; }
+    .studios-credit { position: fixed; bottom: 0; right: 0; z-index: 9999; padding: 5px 12px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-top-left-radius: 8px;
+      font-family: monospace; font-size: 0.7rem; color: rgba(255,255,255,0.4);
+      letter-spacing: 0.05em; pointer-events: none; }
+  </style>
 </head>
 <body>
+  <nav class="home-nav"><a href="../index.html">&#8592; Projects</a></nav>
+  <div class="studios-credit">2357 Studios</div>
 <div class="app">
   <header>
     <div class="header-left">

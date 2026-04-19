@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Bar Math</title>
+<title>Bar Math | 2357 Studios</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap');
 
@@ -239,6 +239,7 @@
   .action-btn:active { transform: scale(0.96); }
   .action-btn.undo { border-color: var(--border); }
   .action-btn.clear { border-color: var(--red); color: var(--red); }
+  .action-btn.abandon { border-color: var(--border); color: var(--muted); font-size: 11px; flex: 0 0 auto; padding: 16px 14px; }
 
   .action-btn:disabled { opacity: 0.3; pointer-events: none; }
 
@@ -301,17 +302,32 @@
   }
   .play-again:active { transform: scale(0.97); }
 
-  /* High scores on start screen */
-  .hs-section { width: 100%; max-width: 320px; }
-  .hs-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
-  .hs-tab {
-    flex: 1; padding: 8px; border-radius: 6px;
-    border: 2px solid var(--border); background: var(--surface);
-    color: var(--muted); font-family: 'DM Mono', monospace;
-    font-size: 11px; letter-spacing: 2px; cursor: pointer;
-    text-transform: uppercase; transition: all 0.15s;
+  /* Records button on start screen */
+  .records-btn {
+    width: 100%; max-width: 320px; padding: 14px;
+    background: transparent; color: var(--muted);
+    border: 2px solid var(--border); border-radius: 8px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 20px;
+    letter-spacing: 3px; cursor: pointer; transition: all 0.15s;
   }
-  .hs-tab.active { border-color: var(--gold); color: var(--gold); background: rgba(232,184,75,0.08); }
+  .records-btn:active { transform: scale(0.97); }
+
+  /* Records screen */
+  #records-screen { gap: 28px; }
+  .records-cols { display: flex; gap: 16px; width: 100%; max-width: 580px; }
+  .records-col { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .records-col-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px;
+    letter-spacing: 2px; color: var(--gold); text-align: center; padding-bottom: 2px;
+  }
+  .back-btn {
+    width: 100%; max-width: 580px; padding: 14px;
+    background: transparent; color: var(--muted);
+    border: 2px solid var(--border); border-radius: 8px;
+    font-family: 'DM Mono', monospace; font-size: 13px;
+    letter-spacing: 2px; cursor: pointer; transition: all 0.15s;
+  }
+  .back-btn:active { transform: scale(0.97); }
   .hs-list { display: flex; flex-direction: column; gap: 6px; }
   .hs-row {
     display: flex; align-items: center; gap: 10px;
@@ -339,9 +355,25 @@
   .flash.show { opacity: 0.18; }
   .flash.red { background: var(--red); }
   .flash.green { background: var(--green); }
+  .bar-hint { font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-top: 6px; }
 </style>
+  <style>
+    .home-nav { position: fixed; top: 0; left: 0; z-index: 9999; padding: 6px 14px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-bottom-right-radius: 8px; }
+    .home-nav a { color: rgba(255,255,255,0.75); text-decoration: none;
+      font-family: monospace; font-size: 0.8rem; letter-spacing: 0.06em; }
+    .home-nav a:hover { color: #fff; }
+    .studios-credit { position: fixed; bottom: 0; right: 0; z-index: 9999; padding: 5px 12px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px); border-top-left-radius: 8px;
+      font-family: monospace; font-size: 0.7rem; color: rgba(255,255,255,0.4);
+      letter-spacing: 0.05em; pointer-events: none; }
+  </style>
 </head>
 <body>
+  <nav class="home-nav"><a href="../index.html">&#8592; Projects</a></nav>
+  <div class="studios-credit">2357 Studios</div>
 
 <!-- Flash overlay -->
 <div class="flash" id="flash"></div>
@@ -351,6 +383,7 @@
   <div class="logo">
     <h1>BAR<br>MATH</h1>
     <p>Load the bar. Beat the clock.</p>
+    <p class="bar-hint">Bar = 45 lbs</p>
   </div>
   <div class="round-chooser">
     <label>Choose rounds</label>
@@ -360,13 +393,7 @@
     </div>
   </div>
   <button class="start-btn" id="start-btn" onclick="startGame()">Start →</button>
-  <div class="hs-section">
-    <div class="hs-tabs">
-      <button class="hs-tab active" onclick="showHsTab(5, this)">5 Rounds</button>
-      <button class="hs-tab" onclick="showHsTab(10, this)">10 Rounds</button>
-    </div>
-    <div class="hs-list" id="hs-list"></div>
-  </div>
+  <button class="records-btn" onclick="showRecords()">View Records</button>
 </div>
 
 <!-- GAME SCREEN -->
@@ -389,6 +416,7 @@
   <div class="target-area">
     <div class="target-label">Target Weight</div>
     <div class="target-weight" id="target-display">135 <span>lbs</span></div>
+    <div class="bar-hint">Bar = 45 lbs</div>
   </div>
 
   <div class="bar-area">
@@ -402,7 +430,26 @@
   <div class="actions">
     <button class="action-btn undo" id="undo-btn" onclick="undoPlate()" disabled>↩ Undo</button>
     <button class="action-btn clear" id="clear-btn" onclick="clearPlates()" disabled>✕ Clear</button>
+    <button class="action-btn abandon" onclick="abandonGame()">Quit</button>
   </div>
+</div>
+
+<!-- RECORDS SCREEN -->
+<div class="screen" id="records-screen">
+  <div class="logo">
+    <h1 style="font-size:clamp(40px,12vw,64px)">RECORDS</h1>
+  </div>
+  <div class="records-cols">
+    <div class="records-col">
+      <div class="records-col-title">5 Rounds</div>
+      <div class="hs-list" id="hs-list-5"></div>
+    </div>
+    <div class="records-col">
+      <div class="records-col-title">10 Rounds</div>
+      <div class="hs-list" id="hs-list-10"></div>
+    </div>
+  </div>
+  <button class="back-btn" onclick="showScreen('start-screen')">← Back</button>
 </div>
 
 <!-- END SCREEN -->
@@ -558,8 +605,23 @@ function startTimer() {
   timerInterval = setInterval(() => {
     elapsed = (Date.now() - timerStart) / 1000;
     const el = document.getElementById('timer-val');
+
+    if (elapsed >= 60) {
+      elapsed = 60;
+      stopTimer();
+      el.textContent = '60.0';
+      el.className = 'hud-val urgent';
+      flash('red');
+      setMsg("Time's up! Round forfeited.", 'error');
+      roundFailed = true;
+      roundScores.push(0);
+      lockButtons();
+      setTimeout(() => advanceRound(), 1800);
+      return;
+    }
+
     el.textContent = elapsed.toFixed(1);
-    el.className = 'hud-val' + (elapsed > 20 ? ' urgent' : '');
+    el.className = 'hud-val' + (elapsed > 45 ? ' urgent' : '');
   }, 100);
 }
 
@@ -834,10 +896,10 @@ function saveScore(rounds, score, won, time) {
   return data[rounds].findIndex(e => e.score === score && e.won === won && e.time === Math.round(time));
 }
 
-function renderHsList(rounds) {
+function renderHsList(rounds, elId) {
   const data = loadScores();
   const list = data[rounds] || [];
-  const el = document.getElementById('hs-list');
+  const el = document.getElementById(elId);
   if (!el) return;
   if (list.length === 0) {
     el.innerHTML = '<div class="hs-empty">No scores yet — be the first!</div>';
@@ -853,12 +915,10 @@ function renderHsList(rounds) {
   `).join('');
 }
 
-let activeHsTab = 5;
-function showHsTab(rounds, btn) {
-  activeHsTab = rounds;
-  document.querySelectorAll('.hs-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderHsList(rounds);
+function showRecords() {
+  renderHsList(5, 'hs-list-5');
+  renderHsList(10, 'hs-list-10');
+  showScreen('records-screen');
 }
 
 // ── END GAME ──
@@ -876,16 +936,19 @@ function endGame() {
   newBestEl.textContent = rank === 0 ? '🏆 New High Score!' : rank > 0 && rank < 5 ? `#${rank + 1} All Time` : '';
 }
 
+function abandonGame() {
+  clearInterval(timerInterval);
+  goHome();
+}
+
 function goHome() {
   showScreen('start-screen');
   document.querySelectorAll('.round-btn').forEach(b => b.classList.remove('selected'));
   document.getElementById('start-btn').classList.remove('ready');
-  renderHsList(activeHsTab);
 }
 
 // ── INIT ──
 renderBar();
-renderHsList(5);
 </script>
 </body>
 </html>

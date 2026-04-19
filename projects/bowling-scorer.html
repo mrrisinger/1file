@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>League Scorer</title>
+<title>League Scorer | 2357 Studios</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -18,6 +18,7 @@
     --team2:    #8a2020;
     --green:    #4cdb8a;
     --green-bg: rgba(76,219,138,0.13);
+    --red:      #e05050;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -176,6 +177,10 @@
   .gtotal-row.row-scratch .gc.gval { color: var(--accent); }
   .gtotal-row.row-hdcp    .gc.gval { color: var(--muted); font-size: 0.76rem; }
   .gtotal-row.row-htotal  .gc.gval { color: var(--text); font-weight: 500; font-size: 0.9rem; }
+  .gtotal-row.row-delta   .gc.gval { color: var(--muted); font-size: 0.8rem; }
+
+  .delta-pos { color: var(--green) !important; }
+  .delta-neg { color: var(--red)   !important; }
 
   .gc.high-game {
     color: var(--green) !important;
@@ -286,6 +291,7 @@ function build() {
       { cls: 'row-scratch', label: 'Scratch',    pre: 'gs' },
       { cls: 'row-hdcp',    label: 'Handicap',   pre: 'gh' },
       { cls: 'row-htotal',  label: 'Game Total', pre: 'gt' },
+      { cls: 'row-delta',   label: '+/−',        pre: 'gd' },
     ].forEach(({ cls, label, pre }) => {
       const row = document.createElement('div');
       row.className = `gtotal-row ${cls}`;
@@ -314,6 +320,10 @@ function build() {
       <div class="series-row primary" data-t="${t.id}" data-f="series-row-total">
         <span class="s-label">Team Total</span>
         <span class="s-val" data-t="${t.id}" data-f="series-total">—</span>
+      </div>
+      <div class="series-row">
+        <span class="s-label">+/− Series</span>
+        <span class="s-val" data-t="${t.id}" data-f="series-delta">—</span>
       </div>
     `;
     card.appendChild(ss);
@@ -391,6 +401,29 @@ function highlightAll() {
   TEAMS.forEach((t, i) => {
     const row = q(`[data-t="${t.id}"][data-f="series-row-total"]`);
     if (row) row.classList.toggle('winner', !tied && serials[i] === maxSeries && maxSeries > 0);
+  });
+
+  // Per-game deltas
+  [0,1,2].forEach(g => {
+    const vals = TEAMS.map((_, i) => allGameTotals[i][g]);
+    TEAMS.forEach((t, i) => {
+      const el = q(`[data-t="${t.id}"][data-f="gd${g}"]`);
+      if (!el) return;
+      if (vals[0] === 0 && vals[1] === 0) { el.textContent = '—'; el.className = 'gc gval'; return; }
+      const delta = vals[i] - vals[1 - i];
+      el.textContent = (delta >= 0 ? '+' : '') + delta;
+      el.className = 'gc gval' + (delta > 0 ? ' delta-pos' : delta < 0 ? ' delta-neg' : '');
+    });
+  });
+
+  // Series delta
+  TEAMS.forEach((t, i) => {
+    const el = q(`[data-t="${t.id}"][data-f="series-delta"]`);
+    if (!el) return;
+    if (serials[0] === 0 && serials[1] === 0) { el.textContent = '—'; el.className = 's-val'; return; }
+    const delta = serials[i] - serials[1 - i];
+    el.textContent = (delta >= 0 ? '+' : '') + delta;
+    el.className = 's-val' + (delta > 0 ? ' delta-pos' : delta < 0 ? ' delta-neg' : '');
   });
 }
 
