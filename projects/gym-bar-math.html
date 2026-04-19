@@ -62,18 +62,24 @@
   .round-btns { display: flex; gap: 12px; width: 100%; }
   .round-btn {
     flex: 1;
-    padding: 18px;
+    padding: 18px 8px;
     border: 2px solid var(--border);
     background: var(--surface);
     color: var(--text);
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 36px;
+    font-size: 32px;
     letter-spacing: 2px;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
   }
   .round-btn.selected { border-color: var(--gold); color: var(--gold); background: rgba(232,184,75,0.08); }
+  .round-sub { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; line-height: 1.4; }
+  .round-btn.selected .round-sub { color: var(--gold-dark); }
 
   .start-btn {
     width: 100%;
@@ -244,11 +250,11 @@
   .action-btn:disabled { opacity: 0.3; pointer-events: none; }
 
   /* ── END SCREEN ── */
-  #end-screen { gap: 24px; background: radial-gradient(ellipse at 50% 20%, #0d1a10 0%, #0f0f0f 70%); }
+  #end-screen { gap: 12px; background: radial-gradient(ellipse at 50% 20%, #0d1a10 0%, #0f0f0f 70%); overflow-y: auto; justify-content: flex-start; padding: 20px 24px; }
 
   .end-title {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(48px, 14vw, 80px);
+    font-size: clamp(36px, 10vw, 56px);
     color: var(--gold);
     letter-spacing: 4px;
     text-align: center;
@@ -258,11 +264,11 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
   }
   .score-big {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(72px, 20vw, 120px);
+    font-size: clamp(56px, 16vw, 88px);
     color: var(--text);
     line-height: 1;
   }
@@ -271,7 +277,7 @@
   .stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 10px;
     width: 100%;
     max-width: 340px;
   }
@@ -279,24 +285,24 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 14px;
+    padding: 10px 14px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
   }
-  .stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--text); line-height:1; }
+  .stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--text); line-height:1; }
   .stat-lbl { font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
 
   .play-again {
     width: 100%;
     max-width: 340px;
-    padding: 20px;
+    padding: 14px;
     background: var(--gold);
     color: #0f0f0f;
     border: none;
     border-radius: 8px;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
+    font-size: 26px;
     letter-spacing: 3px;
     cursor: pointer;
   }
@@ -386,10 +392,16 @@
     <p class="bar-hint">Bar = 45 lbs</p>
   </div>
   <div class="round-chooser">
-    <label>Choose rounds</label>
+    <label>Choose difficulty</label>
     <div class="round-btns">
-      <button class="round-btn" data-rounds="5" onclick="selectRounds(5)">5</button>
-      <button class="round-btn" data-rounds="10" onclick="selectRounds(10)">10</button>
+      <button class="round-btn" data-difficulty="easy" onclick="selectDifficulty('easy')">
+        Easy
+        <span class="round-sub">65–315 lbs</span>
+      </button>
+      <button class="round-btn" data-difficulty="hard" onclick="selectDifficulty('hard')">
+        Hard
+        <span class="round-sub">80–495 lbs</span>
+      </button>
     </div>
   </div>
   <button class="start-btn" id="start-btn" onclick="startGame()">Start →</button>
@@ -441,12 +453,12 @@
   </div>
   <div class="records-cols">
     <div class="records-col">
-      <div class="records-col-title">5 Rounds</div>
-      <div class="hs-list" id="hs-list-5"></div>
+      <div class="records-col-title">Easy</div>
+      <div class="hs-list" id="hs-list-easy"></div>
     </div>
     <div class="records-col">
-      <div class="records-col-title">10 Rounds</div>
-      <div class="hs-list" id="hs-list-10"></div>
+      <div class="records-col-title">Hard</div>
+      <div class="hs-list" id="hs-list-hard"></div>
     </div>
   </div>
   <button class="back-btn" onclick="showScreen('start-screen')">← Back</button>
@@ -495,21 +507,9 @@ const PLATE_DEFS = [
 const BAR_WEIGHT = 45;
 
 // ── VALID TARGET WEIGHTS ──
-// Generate all reachable weights using available plates (any quantity each side)
-function generateValidWeights() {
+function buildWeightPool(maxTotal, excludeSinglePlate) {
   const plates = [45, 35, 25, 10, 5, 2.5];
-  const reachable = new Set();
-  // BFS/brute force up to reasonable plate count per side
-  function recurse(remaining, used) {
-    const total = BAR_WEIGHT + remaining * 2;
-    if (total > BAR_WEIGHT) reachable.add(total);
-    if (used >= 6) return; // cap depth
-    for (const p of plates) {
-      recurse(remaining + p, used + 1);
-    }
-  }
-  // Actually build from scratch properly
-  const sideWeights = new Set([0]);
+  const singlePlateSides = new Set([10, 25, 35, 45]);
   const queue = [0];
   const visited = new Set([0]);
   while (queue.length) {
@@ -518,24 +518,27 @@ function generateValidWeights() {
       const nw = Math.round((w + p) * 10) / 10;
       if (nw <= 300 && !visited.has(nw)) {
         visited.add(nw);
-        sideWeights.add(nw);
         queue.push(nw);
       }
     }
   }
   const result = [];
-  for (const sw of sideWeights) {
+  for (const sw of visited) {
     if (sw === 0) continue;
+    if (excludeSinglePlate && singlePlateSides.has(sw)) continue;
     const total = Math.round((BAR_WEIGHT + sw * 2) * 10) / 10;
-    if (total >= 65 && total <= 315) result.push(total);
+    if (total >= 65 && total <= maxTotal) result.push(total);
   }
   return [...new Set(result)].sort((a, b) => a - b);
 }
 
-const VALID_WEIGHTS = generateValidWeights();
+const EASY_WEIGHTS = buildWeightPool(315, false);
+const HARD_WEIGHTS = buildWeightPool(495, true);
 
 // ── STATE ──
-let totalRounds = 5;
+const TOTAL_ROUNDS = 5;
+let difficulty = null;
+let roundQueue = [];
 let currentRound = 0;
 let totalScore = 0;
 let roundScores = [];
@@ -550,16 +553,17 @@ let timerStart = 0;
 let elapsed = 0;
 let roundFailed = false;
 
-// ── ROUND SELECTION ──
-function selectRounds(n) {
-  totalRounds = n;
+// ── DIFFICULTY SELECTION ──
+function selectDifficulty(d) {
+  difficulty = d;
   document.querySelectorAll('.round-btn').forEach(b => b.classList.remove('selected'));
-  document.querySelector(`[data-rounds="${n}"]`).classList.add('selected');
+  document.querySelector(`[data-difficulty="${d}"]`).classList.add('selected');
   document.getElementById('start-btn').classList.add('ready');
 }
 
 // ── START GAME ──
 function startGame() {
+  roundQueue = buildRoundQueue();
   currentRound = 0;
   totalScore = 0;
   roundScores = [];
@@ -582,11 +586,11 @@ function nextRound() {
   roundFailed = false;
   elapsed = 0;
 
-  // Pick random target
-  targetWeight = VALID_WEIGHTS[Math.floor(Math.random() * VALID_WEIGHTS.length)];
+  // Pick from pre-built tier queue
+  targetWeight = roundQueue[currentRound - 1];
 
   // Update HUD
-  document.getElementById('round-val').textContent = `${currentRound}/${totalRounds}`;
+  document.getElementById('round-val').textContent = `${currentRound}/${TOTAL_ROUNDS}`;
   document.getElementById('score-val').textContent = totalScore;
   document.getElementById('target-display').innerHTML = `${targetWeight} <span>lbs</span>`;
   document.getElementById('msg-bar').textContent = '';
@@ -733,7 +737,7 @@ function checkRoundState() {
 }
 
 function advanceRound() {
-  if (currentRound >= totalRounds) {
+  if (currentRound >= TOTAL_ROUNDS) {
     endGame();
   } else {
     nextRound();
@@ -753,6 +757,34 @@ function minPlatesFor(target) {
     }
   }
   return count;
+}
+
+// ── TIER GROUPING & ROUND QUEUE ──
+function groupByTier(weights) {
+  const tiers = {};
+  for (const w of weights) {
+    const n = minPlatesFor(w);
+    if (!tiers[n]) tiers[n] = [];
+    tiers[n].push(w);
+  }
+  return tiers;
+}
+
+const EASY_TIERS = groupByTier(EASY_WEIGHTS);
+const HARD_TIERS = groupByTier(HARD_WEIGHTS);
+
+function buildRoundQueue() {
+  const tiers = difficulty === 'hard' ? HARD_TIERS : EASY_TIERS;
+  const tierKeys = difficulty === 'hard' ? [3, 4, 5, 6, 7] : [1, 2, 3, 4, 5];
+  const selected = tierKeys.map(k => {
+    const pool = tiers[k] || [];
+    return pool[Math.floor(Math.random() * pool.length)];
+  });
+  for (let i = selected.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [selected[i], selected[j]] = [selected[j], selected[i]];
+  }
+  return selected;
 }
 
 // ── BAR RENDERING ──
@@ -882,23 +914,23 @@ function setMsg(msg, type='') {
 const HS_KEY = 'barmath_hs';
 
 function loadScores() {
-  try { return JSON.parse(localStorage.getItem(HS_KEY)) || { 5: [], 10: [] }; }
-  catch { return { 5: [], 10: [] }; }
+  try { return JSON.parse(localStorage.getItem(HS_KEY)) || { easy: [], hard: [] }; }
+  catch { return { easy: [], hard: [] }; }
 }
 
-function saveScore(rounds, score, won, time) {
+function saveScore(diff, score, won, time) {
   const data = loadScores();
-  if (!data[rounds]) data[rounds] = [];
-  data[rounds].push({ score, won, time: Math.round(time) });
-  data[rounds].sort((a, b) => b.score - a.score);
-  data[rounds] = data[rounds].slice(0, 5);
+  if (!data[diff]) data[diff] = [];
+  data[diff].push({ score, won, time: Math.round(time) });
+  data[diff].sort((a, b) => b.score - a.score);
+  data[diff] = data[diff].slice(0, 5);
   localStorage.setItem(HS_KEY, JSON.stringify(data));
-  return data[rounds].findIndex(e => e.score === score && e.won === won && e.time === Math.round(time));
+  return data[diff].findIndex(e => e.score === score && e.won === won && e.time === Math.round(time));
 }
 
-function renderHsList(rounds, elId) {
+function renderHsList(diff, elId) {
   const data = loadScores();
-  const list = data[rounds] || [];
+  const list = data[diff] || [];
   const el = document.getElementById(elId);
   if (!el) return;
   if (list.length === 0) {
@@ -910,23 +942,23 @@ function renderHsList(rounds, elId) {
     <div class="hs-row">
       <span class="hs-rank ${rankClass[i] || ''}">${i + 1}</span>
       <span class="hs-score">${e.score}</span>
-      <span class="hs-meta">${e.won}/${rounds} won<br>${e.time}s</span>
+      <span class="hs-meta">${e.won}/${TOTAL_ROUNDS} won<br>${e.time}s</span>
     </div>
   `).join('');
 }
 
 function showRecords() {
-  renderHsList(5, 'hs-list-5');
-  renderHsList(10, 'hs-list-10');
+  renderHsList('easy', 'hs-list-easy');
+  renderHsList('hard', 'hs-list-hard');
   showScreen('records-screen');
 }
 
 // ── END GAME ──
 function endGame() {
-  const rank = saveScore(totalRounds, totalScore, roundsWon, totalTime);
+  const rank = saveScore(difficulty, totalScore, roundsWon, totalTime);
   showScreen('end-screen');
   document.getElementById('final-score').textContent = totalScore;
-  document.getElementById('stat-rounds').textContent = `${roundsWon}/${totalRounds}`;
+  document.getElementById('stat-rounds').textContent = `${roundsWon}/${TOTAL_ROUNDS}`;
   document.getElementById('stat-time').textContent = `${totalTime.toFixed(0)}s`;
   const avgPlates = roundsWon > 0 ? (totalPlatesUsed / roundsWon).toFixed(1) : '—';
   document.getElementById('stat-plates').textContent = avgPlates;
@@ -942,6 +974,7 @@ function abandonGame() {
 }
 
 function goHome() {
+  difficulty = null;
   showScreen('start-screen');
   document.querySelectorAll('.round-btn').forEach(b => b.classList.remove('selected'));
   document.getElementById('start-btn').classList.remove('ready');
