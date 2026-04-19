@@ -3,7 +3,7 @@
     "name": "Chase the Ace Ticket Checker",
     "description": "Paste your Chase the Ace lottery ticket numbers and instantly check them against the winning number.",
     "category": "utility",
-    "tags": ["lottery", "LottoAlaska", "tickets", "checker"],
+    "tags": ["lottery", "LottoAlaska", "tickets"],
     "created": "2026-04-03",
     "updated": "2026-04-19",
     "url": "projects/lottery-checker.html"
@@ -29,7 +29,7 @@
   {
     "name": "Game Scorer",
     "description": "A flexible multi-player round-by-round scorer with customizable player names and round tracking.",
-    "category": "game",
+    "category": "utility",
     "tags": ["scoring", "multiplayer", "rounds"],
     "created": "2026-04-01",
     "updated": "2026-04-19",
@@ -57,7 +57,7 @@
     "name": "Initiative Tracker",
     "description": "A tabletop RPG combat tracker — manage turn order, tag conditions, and count rounds for D&D and similar games.",
     "category": "utility",
-    "tags": ["initiative", "tracker", "RPG", "tool"],
+    "tags": ["initiative", "RPG", "D&D"],
     "created": "2026-04-12",
     "updated": "2026-04-19",
     "url": "projects/initiative-tracker.html"
@@ -66,7 +66,7 @@
     "name": "Bar Math",
     "description": "A speed-based mental math game — calculate the total barbell weight from plate combinations as fast as you can.",
     "category": "game",
-    "tags": ["gym", "workout", "math", "tool"],
+    "tags": ["gym", "workout", "math"],
     "created": "2026-04-15",
     "updated": "2026-04-19",
     "url": "projects/gym-bar-math.html"
@@ -74,8 +74,8 @@
   {
     "name": "7 Wonders Duel Scorer",
     "description": "Scorer for the board game, 7 Wonders Duel. Includes scoring for Angora expansion.",
-    "category": "game",
-    "tags": ["scorer", "7wonders", "angora", "board-game"],
+    "category": "utility",
+    "tags": ["7wonders", "angora", "board-game"],
     "created": "2026-04-18",
     "updated": "2026-04-19",
     "url": "projects/7wonders-duel-scorer.html"
