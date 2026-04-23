@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Spin It! | 2357 Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e17;
+    --surface: #1a1929;
+    --border: #2e2c45;
+    --accent: #ff6b35;
+    --accent2: #ffd166;
+    --accent3: #06d6a0;
+    --text: #fffffe;
+    --muted: #a7a5c2;
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+
+  /* Starfield bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 10%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 70%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 45% 55%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,0.25) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    width: 100%;
+    text-align: center;
+    padding: 20px 16px 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  header h1 {
+    font-family: 'Lilita One', cursive;
+    font-size: 2.4rem;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ─── MAIN LAYOUT ─── */
+  main {
+    width: 100%;
+    max-width: 480px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+    flex: 1;
+  }
+
+  /* ─── CANVAS WRAPPER ─── */
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    max-width: 340px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  canvas#wheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    filter: drop-shadow(0 0 24px rgba(255,107,53,0.35));
+    display: block;
+  }
+
+  /* Pointer */
+  .pointer {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 28px solid var(--accent2);
+    filter: drop-shadow(0 2px 6px rgba(255,209,102,0.6));
+    z-index: 10;
+  }
+
+  /* Center circle overlay */
+  .center-btn {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    width: 58px; height: 58px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 3px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-family: 'Lilita One', cursive;
+    font-size: 0.75rem;
+    color: var(--accent2);
+    letter-spacing: 0.5px;
+    z-index: 10;
+    user-select: none;
+  }
+
+  /* ─── COIN ─── */
+  #coinWrap {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 340px;
+    aspect-ratio: 1;
+  }
+
+  #coinCanvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ─── SPIN BUTTON ─── */
+  button#spinBtn {
+    width: 100%;
+    max-width: 320px;
+    padding: 16px;
+    border-radius: 50px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), #e84393);
+    color: #fff;
+    font-family: 'Lilita One', cursive;
+    font-size: 1.4rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(255,107,53,0.4);
+    transition: transform 0.1s, box-shadow 0.1s;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  button#spinBtn:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(255,107,53,0.3); }
+  button#spinBtn:disabled { opacity: 0.5; }
+
+  /* ─── ADD ITEMS ─── */
+  .add-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .add-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .add-row input:focus { border-color: var(--accent); }
+  .add-row input::placeholder { color: var(--muted); }
+
+  .add-row button {
+    background: var(--accent3);
+    border: none;
+    border-radius: var(--radius);
+    padding: 12px 18px;
+    color: #000;
+    font-family: 'Lilita One', cursive;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .add-row button:active { opacity: 0.75; }
+
+  /* ─── ITEMS LIST ─── */
+  .items-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .items-header span {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .items-header button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: color 0.2s;
+  }
+  .items-header button:hover { color: var(--accent); }
+
+  .items-list {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .item-chip {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 50px;
+    padding: 6px 12px 6px 14px;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .item-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 160px;
+  }
+
+  .chip-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .item-chip button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0 2px;
+    flex-shrink: 0;
+  }
+  .item-chip button:active { color: var(--accent); }
+
+  .empty-hint {
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 8px;
+    width: 100%;
+  }
+
+  /* ─── RESULT OVERLAY ─── */
+  #overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,9,22,0.88);
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    backdrop-filter: blur(6px);
+  }
+
+  #overlay.show { display: flex; }
+
+  .result-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 24px;
+    padding: 36px 28px;
+    text-align: center;
+    max-width: 340px;
+    width: 100%;
+    box-shadow: 0 0 60px rgba(255,107,53,0.2);
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0.7); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+
+  .result-emoji { font-size: 3rem; margin-bottom: 8px; }
+
+  .result-label {
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .result-winner {
+    font-family: 'Lilita One', cursive;
+    font-size: 2rem;
+    color: var(--accent2);
+    line-height: 1.2;
+    margin-bottom: 24px;
+    word-break: break-word;
+  }
+
+  .result-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .result-actions button {
+    padding: 14px;
+    border-radius: 50px;
+    border: none;
+    font-family: 'Lilita One', cursive;
+    font-size: 1rem;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-remove {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-again {
+    background: var(--surface);
+    border: 2px solid var(--border) !important;
+    color: var(--text);
+  }
+
+  /* Confetti canvas */
+  #confettiCanvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99;
+  }
+  .home-nav { position: fixed; top: 0; left: 0; z-index: 9999; padding: 6px 14px;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px); border-bottom-right-radius: 8px; }
+  .home-nav a { color: rgba(255,255,255,0.75); text-decoration: none;
+    font-family: monospace; font-size: 0.8rem; letter-spacing: 0.06em; }
+  .home-nav a:hover { color: #fff; }
+  .studios-credit { position: fixed; bottom: 0; right: 0; z-index: 9999; padding: 5px 12px;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px); border-top-left-radius: 8px;
+    font-family: monospace; font-size: 0.7rem; color: rgba(255,255,255,0.4);
+    letter-spacing: 0.05em; pointer-events: none; }
+</style>
+</head>
+<body>
+  <nav class="home-nav"><a href="../index.html">&#8592; Projects</a></nav>
+  <div class="studios-credit">2357 Studios</div>
+
+<canvas id="confettiCanvas"></canvas>
+
+<header>
+  <h1>✨ Spin It!</h1>
+</header>
+
+<main>
+  <!-- Canvas (wheel or coin) -->
+  <div class="canvas-wrap" id="wheelWrap">
+    <div class="pointer" id="pointer"></div>
+    <canvas id="wheel"></canvas>
+    <div class="center-btn" id="centerBtn">SPIN</div>
+  </div>
+
+  <div id="coinWrap">
+    <canvas id="coinCanvas"></canvas>
+  </div>
+
+  <button id="spinBtn">🎰 SPIN!</button>
+
+  <div class="add-row">
+    <input type="text" id="itemInput" placeholder="Add an item…" maxlength="40" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button id="addBtn" type="button">Add</button>
+  </div>
+
+  <div class="items-header">
+    <span id="countLabel">0 items</span>
+    <button id="clearAll" type="button">Clear all</button>
+  </div>
+
+  <div class="items-list" id="itemsList">
+    <p class="empty-hint">Add at least 2 items to get started!</p>
+  </div>
+</main>
+
+<!-- Result overlay -->
+<div id="overlay">
+  <div class="result-card">
+    <div class="result-emoji" id="resultEmoji">🎉</div>
+    <div class="result-label" id="resultLabel">Winner!</div>
+    <div class="result-winner" id="resultWinner">—</div>
+    <div class="result-actions">
+      <button class="btn-remove" id="btnRemove" type="button">Remove &amp; Spin Again</button>
+      <button class="btn-again" id="btnAgain" type="button">Keep &amp; Spin Again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── PALETTE ───
+const COLORS = [
+  '#ff6b35','#ffd166','#06d6a0','#118ab2','#e84393',
+  '#a855f7','#3b82f6','#f97316','#10b981','#ef4444',
+  '#8b5cf6','#ec4899','#14b8a6','#f59e0b','#6366f1'
+];
+
+// ─── STATE ───
+const STORAGE_KEY = 'spinit_items';
+let items = [];
+let spinning = false;
+let currentWinner = null;
+let coinMode = false;
+
+// ─── PERSISTENCE ───
+function load() {
+  try { items = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { items = []; }
+}
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+}
+
+// ─── RENDER CHIPS ───
+function renderList() {
+  const list = document.getElementById('itemsList');
+  const count = document.getElementById('countLabel');
+  const spinBtn = document.getElementById('spinBtn');
+  const centerBtn = document.getElementById('centerBtn');
+
+  count.textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
+  spinBtn.disabled = items.length < 2;
+  spinBtn.textContent = items.length < 2 ? '🎰 SPIN!' : (items.length === 2 ? '🪙 FLIP!' : '🎰 SPIN!');
+  centerBtn.textContent = items.length === 2 ? 'FLIP' : 'SPIN';
+
+  list.innerHTML = '';
+  if (items.length === 0) {
+    list.innerHTML = '<p class="empty-hint">Add at least 2 items to get started!</p>';
+    return;
+  }
+  items.forEach((item, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'item-chip';
+    chip.innerHTML = `
+      <div class="chip-dot" style="background:${COLORS[i % COLORS.length]}"></div>
+      <span>${escHtml(item)}</span>
+      <button type="button" aria-label="Remove ${escHtml(item)}" data-i="${i}">✕</button>
+    `;
+    chip.querySelector('button').addEventListener('click', () => {
+      items.splice(i, 1);
+      save();
+      renderList();
+      drawWheel();
+    });
+    list.appendChild(chip);
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── WHEEL DRAWING ───
+const wCanvas = document.getElementById('wheel');
+const wCtx = wCanvas.getContext('2d');
+let wheelAngle = 0;
+
+function drawWheel(angle) {
+  const dpr = window.devicePixelRatio || 1;
+  const size = wCanvas.clientWidth || 300;
+  wCanvas.width = size * dpr;
+  wCanvas.height = size * dpr;
+  const ctx = wCtx;
+  ctx.scale(dpr, dpr);
+  const cx = size / 2, cy = size / 2, r = size / 2 - 4;
+  const n = items.length;
+
+  if (n === 0) {
+    ctx.clearRect(0, 0, size, size);
+    // Draw placeholder circle
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#1a1929';
+    ctx.fill();
+    ctx.strokeStyle = '#2e2c45';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = '#a7a5c2';
+    ctx.font = `bold 14px "DM Sans", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Add items!', cx, cy);
+    return;
+  }
+
+  const arc = (Math.PI * 2) / n;
+  const a = angle ?? wheelAngle;
+
+  ctx.clearRect(0, 0, size, size);
+
+  // Outer glow ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, r + 3, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,107,53,0.2)';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  for (let i = 0; i < n; i++) {
+    const start = a + i * arc - Math.PI / 2;
+    const end = start + arc;
+
+    // Slice
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.closePath();
+    ctx.fillStyle = COLORS[i % COLORS.length];
+    ctx.fill();
+
+    // Separator line
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, start + 0.005);
+    ctx.strokeStyle = 'rgba(15,14,23,0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Label
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(start + arc / 2);
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    const maxLen = r * 0.75;
+    const fontSize = Math.max(10, Math.min(16, r * 0.12));
+    ctx.font = `600 ${fontSize}px "DM Sans", sans-serif`;
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 4;
+
+    let label = items[i];
+    // Truncate to fit
+    ctx.font = `600 ${fontSize}px "DM Sans", sans-serif`;
+    while (ctx.measureText(label).width > maxLen && label.length > 3) {
+      label = label.slice(0, -2) + '…';
+    }
+    ctx.fillText(label, r - 10, 0);
+    ctx.restore();
+  }
+
+  // Center circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, 28, 0, Math.PI * 2);
+  ctx.fillStyle = '#0f0e17';
+  ctx.fill();
+  ctx.strokeStyle = '#2e2c45';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+
+// ─── SPIN LOGIC ───
+let rafId = null;
+let spinVelocity = 0;
+let spinDeceleration = 0;
+let spinTarget = 0;
+let spinDuration = 0;
+let spinStart = 0;
+
+function spin() {
+  if (spinning || items.length < 2) return;
+  if (items.length === 2) { flipCoin(); return; }
+
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+
+  // Pick winner index
+  const winnerIdx = Math.floor(Math.random() * items.length);
+  const arc = (Math.PI * 2) / items.length;
+
+  // The draw code renders slice i starting at: wheelAngle + i*arc - π/2
+  // So slice i's center is at: wheelAngle + i*arc + arc/2 - π/2
+  // The pointer sits at canvas top = angle 0 (straight up in canvas coords, which is -π/2 in arc coords)
+  // We want the winner's center to land at the pointer, i.e.:
+  //   newWheelAngle + winnerIdx*arc + arc/2 - π/2 = -π/2  (mod 2π)
+  //   newWheelAngle = -(winnerIdx*arc + arc/2)
+  const extraSpins = (5 + Math.floor(Math.random() * 5)) * Math.PI * 2;
+  const desiredAngle = -(winnerIdx * arc + arc / 2);
+  let delta = (desiredAngle - wheelAngle) % (Math.PI * 2);
+  if (delta > 0) delta -= Math.PI * 2;
+  spinTarget = wheelAngle + delta - extraSpins;
+
+  const totalDelta = Math.abs(wheelAngle - spinTarget);
+  spinDuration = 3500 + totalDelta * 60;
+  spinStart = performance.now();
+  const startAngle = wheelAngle;
+
+  function easeOut(t) {
+    return 1 - Math.pow(1 - t, 4);
+  }
+
+  function frame(now) {
+    const elapsed = now - spinStart;
+    const t = Math.min(elapsed / spinDuration, 1);
+    wheelAngle = startAngle + (spinTarget - startAngle) * easeOut(t);
+    drawWheel(wheelAngle);
+
+    if (t < 1) {
+      rafId = requestAnimationFrame(frame);
+    } else {
+      wheelAngle = spinTarget;
+      drawWheel(wheelAngle);
+      spinning = false;
+      currentWinner = items[winnerIdx];
+      showResult(currentWinner, winnerIdx, false);
+    }
+  }
+
+  rafId = requestAnimationFrame(frame);
+}
+
+// ─── COIN FLIP (canvas-drawn) ───
+function flipCoin() {
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+
+  const winnerIdx = Math.random() < 0.5 ? 0 : 1;
+  currentWinner = items[winnerIdx];
+
+  // Show coin canvas, hide wheel
+  document.getElementById('wheelWrap').style.display = 'none';
+  const coinWrap = document.getElementById('coinWrap');
+  coinWrap.style.display = 'flex';
+
+  const canvas = document.getElementById('coinCanvas');
+  const dpr = window.devicePixelRatio || 1;
+  const size = coinWrap.clientWidth || 300;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const cx = size / 2, cy = size / 2;
+  const maxR = size * 0.42;
+
+  // Gold (heads) and silver (tails) palettes
+  const HEADS = { rim: '#f9a825', light: '#ffe082', mid: '#ffca28', dark: '#f57f17', text: '#3e2700' };
+  const TAILS = { rim: '#78909c', light: '#eceff1', mid: '#b0bec5', dark: '#455a64', text: '#eceff1' };
+
+  // Animation: scaleY oscillates cos(angle), angle runs from 0 → many*2π
+  // When scaleY < 0 we're seeing the back face
+  const totalFlips = 6 + Math.floor(Math.random() * 4); // full rotations
+  const totalAngle = totalFlips * Math.PI * 2;
+  // Winner: heads=even half-flips end, tails=odd
+  // Final angle where cos gives +1 = heads showing, cos gives -1 = tails showing
+  const finalAngle = winnerIdx === 0
+    ? Math.ceil(totalFlips) * Math.PI * 2          // cos=+1 → heads
+    : Math.ceil(totalFlips) * Math.PI * 2 + Math.PI; // cos=-1 → tails
+
+  const duration = 2200 + Math.random() * 600;
+  const startTime = performance.now();
+
+  // Easing: fast start, slow dramatic end
+  function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
+
+  function drawCoin(angle) {
+    ctx.clearRect(0, 0, size, size);
+
+    const scaleY = Math.cos(angle);
+    const absScale = Math.abs(scaleY);
+    const isTails = scaleY < 0;
+    const pal = isTails ? TAILS : HEADS;
+    const label = isTails ? items[1] : items[0];
+
+    // Shadow beneath coin
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + maxR * 0.85, maxR * 0.7 * absScale + 4, maxR * 0.12, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.filter = 'blur(6px)';
+    ctx.fill();
+    ctx.filter = 'none';
+    ctx.restore();
+
+    // Coin body (ellipse to simulate 3D flip)
+    const rx = maxR;
+    const ry = maxR * absScale + 1; // never fully 0 so it looks like thickness
+
+    // Rim / edge — drawn slightly larger, gives depth
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx + 4, ry + 4, 0, 0, Math.PI * 2);
+    ctx.fillStyle = pal.rim;
+    ctx.fill();
+    ctx.restore();
+
+    // Face gradient
+    const grad = ctx.createRadialGradient(cx - rx * 0.25, cy - ry * 0.3, 0, cx, cy, rx);
+    grad.addColorStop(0, pal.light);
+    grad.addColorStop(0.5, pal.mid);
+    grad.addColorStop(1, pal.dark);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.restore();
+
+    // Shine highlight
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx - rx * 0.2, cy - ry * 0.3, rx * 0.35, ry * 0.25, -0.4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.fill();
+    ctx.restore();
+
+    // Label text — only draw when coin is wide enough to read
+    if (absScale > 0.25) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.clip();
+
+      const fontSize = Math.max(11, Math.min(22, rx * 0.22));
+      ctx.font = `700 ${fontSize}px "Lilita One", cursive`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = pal.text;
+
+      // Word-wrap crude: break into lines
+      const words = label.split(' ');
+      const maxWidth = rx * 1.6;
+      const lines = [];
+      let line = '';
+      for (const w of words) {
+        const test = line ? line + ' ' + w : w;
+        if (ctx.measureText(test).width > maxWidth && line) {
+          lines.push(line); line = w;
+        } else { line = test; }
+      }
+      lines.push(line);
+
+      const lineH = fontSize * 1.25;
+      const totalH = lines.length * lineH;
+      lines.forEach((l, i) => {
+        ctx.fillText(l, cx, cy - totalH / 2 + i * lineH + lineH / 2);
+      });
+      ctx.restore();
+    }
+  }
+
+  function frame(now) {
+    const t = Math.min((now - startTime) / duration, 1);
+    const angle = easeOutQuart(t) * finalAngle;
+    drawCoin(angle);
+
+    if (t < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      drawCoin(finalAngle);
+      // Pause on the result for 600ms then show overlay
+      setTimeout(() => {
+        spinning = false;
+        showResult(currentWinner, winnerIdx, true);
+        coinWrap.style.display = 'none';
+        document.getElementById('wheelWrap').style.display = 'flex';
+      }, 600);
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+// ─── RESULT ───
+function showResult(winner, idx, isCoin) {
+  launchConfetti();
+  document.getElementById('resultWinner').textContent = winner;
+  document.getElementById('resultEmoji').textContent = isCoin ? '🪙' : '🎉';
+  document.getElementById('resultLabel').textContent = isCoin ? '🪙 The coin says…' : '🎉 The wheel chose…';
+
+  // color the card border
+  const card = document.querySelector('.result-card');
+  card.style.borderColor = COLORS[idx % COLORS.length];
+
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closeResult(removeWinner) {
+  document.getElementById('overlay').classList.remove('show');
+  if (removeWinner && currentWinner !== null) {
+    const i = items.indexOf(currentWinner);
+    if (i > -1) items.splice(i, 1);
+    save();
+    renderList();
+    drawWheel();
+  }
+  document.getElementById('spinBtn').disabled = items.length < 2;
+  currentWinner = null;
+}
+
+document.getElementById('btnRemove').addEventListener('click', () => closeResult(true));
+document.getElementById('btnAgain').addEventListener('click', () => closeResult(false));
+
+// ─── CONFETTI ───
+function launchConfetti() {
+  const canvas = document.getElementById('confettiCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const pieces = Array.from({length: 90}, () => ({
+    x: Math.random() * canvas.width,
+    y: -20 - Math.random() * canvas.height * 0.3,
+    r: 4 + Math.random() * 6,
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    dx: (Math.random() - 0.5) * 4,
+    dy: 3 + Math.random() * 5,
+    rot: Math.random() * 360,
+    drot: (Math.random() - 0.5) * 8,
+    life: 1
+  }));
+
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    frame++;
+    let alive = false;
+    for (const p of pieces) {
+      p.x += p.dx;
+      p.y += p.dy;
+      p.dy += 0.08;
+      p.rot += p.drot;
+      if (p.y < canvas.height + 20) alive = true;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, 1 - p.y / canvas.height);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.r, -p.r/2, p.r*2, p.r);
+      ctx.restore();
+    }
+    if (alive && frame < 180) requestAnimationFrame(draw);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  requestAnimationFrame(draw);
+}
+
+// ─── ADD ITEM ───
+function addItem() {
+  const input = document.getElementById('itemInput');
+  const val = input.value.trim();
+  if (!val) return;
+  if (items.includes(val)) { input.select(); return; }
+  items.push(val);
+  input.value = '';
+  save();
+  renderList();
+  drawWheel();
+}
+
+document.getElementById('addBtn').addEventListener('click', addItem);
+document.getElementById('itemInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addItem();
+});
+
+document.getElementById('clearAll').addEventListener('click', () => {
+  if (!items.length) return;
+  if (confirm('Clear all items?')) {
+    items = [];
+    save();
+    renderList();
+    drawWheel();
+  }
+});
+
+// ─── SPIN BUTTON ───
+document.getElementById('spinBtn').addEventListener('click', spin);
+document.getElementById('centerBtn').addEventListener('click', spin);
+
+// ─── INIT ───
+window.addEventListener('resize', () => drawWheel(wheelAngle));
+load();
+renderList();
+drawWheel();
+</script>
+</body>
+</html>

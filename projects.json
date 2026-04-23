@@ -79,5 +79,14 @@
     "created": "2026-04-18",
     "updated": "2026-04-19",
     "url": "projects/7wonders-duel-scorer.html"
+  },
+  {
+    "name": "Spin It!",
+    "description": "A dazzling spinning wheel and coin-flip randomizer — load it up with your options and let fate make the call.",
+    "category": "utility",
+    "tags": ["random", "spinner", "decision"],
+    "created": "2026-04-22",
+    "updated": "2026-04-22",
+    "url": "projects/spinner.html"
   }
 ]
