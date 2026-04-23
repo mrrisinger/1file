@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Interval Timer | 2357 Studios</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --border: #2a2a3a;
+    --accent: #e8ff47;
+    --accent2: #ff4d6d;
+    --accent3: #47d4ff;
+    --text: #f0f0f8;
+    --muted: #5a5a7a;
+    --pad-bg: #16161f;
+    --pad-active: #22223a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; flex-direction: column; height: 100%; }
+  .screen.active { display: flex; }
+
+  /* ── SETUP SCREEN ── */
+  #setup {
+    padding: 0;
+    gap: 0;
+  }
+
+  .setup-header {
+    padding: 18px 20px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .app-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .presets-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+
+  .input-panels {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .input-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .input-col:last-child { border-right: none; }
+
+  .col-label {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 0 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .col-label.delay-label { color: var(--accent3); opacity: 0.7; }
+  .col-label.timer-label { color: var(--accent); opacity: 0.7; }
+
+  .display-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 8px 6px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    min-height: 56px;
+  }
+
+  .display-time {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    letter-spacing: 4px;
+    line-height: 1;
+  }
+
+  .display-time.delay-time { color: var(--accent3); }
+  .display-time.timer-time { color: var(--accent); }
+
+  .display-time .colon { opacity: 0.4; }
+
+
+  /* ── NUMBER PAD ── */
+  .numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    flex: 1;
+  }
+
+  .numpad button {
+    background: var(--pad-bg);
+    border: none;
+    color: var(--text);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.08s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .numpad button:active { background: var(--pad-active); }
+
+  .numpad .btn-del {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    color: var(--muted);
+  }
+
+  /* ── START BAR ── */
+  .start-bar {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .start-btn {
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 4px;
+    padding: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.1s, opacity 0.1s;
+  }
+
+  .start-btn:active { transform: scale(0.98); opacity: 0.9; }
+  .start-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ── PRESETS OVERLAY ── */
+  #presets-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+  }
+  #presets-overlay.open { display: flex; }
+
+  .presets-sheet {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    width: 100%;
+    max-height: 75vh;
+    overflow-y: auto;
+    padding: 16px;
+    animation: slideUp 0.25s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .presets-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .preset-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .preset-item:last-child { border-bottom: none; }
+
+  .preset-name-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 8px 10px;
+    border-radius: 6px;
+    outline: none;
+    min-width: 0;
+  }
+  .preset-name-input:focus { border-color: var(--accent); }
+
+  .preset-times {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    white-space: nowrap;
+    min-width: 110px;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .preset-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .preset-load-btn, .preset-save-btn, .preset-clear-btn {
+    border: none;
+    border-radius: 5px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 7px 10px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+
+  .preset-load-btn { background: var(--accent); color: #0a0a0f; }
+  .preset-save-btn { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .preset-clear-btn { background: none; color: var(--muted); border: 1px solid var(--border); }
+
+  .presets-close {
+    width: 100%;
+    margin-top: 14px;
+    padding: 12px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  /* ── RUNNING SCREEN ── */
+  #running {
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 24px 28px;
+  }
+
+  .running-phase {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .running-phase.phase-delay { color: var(--accent3); }
+  .running-phase.phase-active { color: var(--accent); }
+  .running-phase.phase-warn { color: var(--accent2); }
+
+  .running-clock {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 14vw, 80px);
+    line-height: 0.9;
+    text-align: center;
+    letter-spacing: 6px;
+    transition: color 0.3s;
+  }
+
+  .running-clock.clock-delay { color: var(--accent3); }
+  .running-clock.clock-active { color: var(--accent); }
+  .running-clock.clock-warn { color: var(--accent2); }
+
+  .running-label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .progress-ring-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ring-svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-90deg);
+    pointer-events: none;
+  }
+
+  .ring-track { fill: none; stroke: var(--border); }
+  .ring-fill {
+    fill: none;
+    stroke: var(--accent);
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s;
+  }
+
+  .running-controls {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .ctrl-btn {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.1s;
+  }
+  .ctrl-btn:active { transform: scale(0.97); opacity: 0.85; }
+
+  .btn-pause { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-stop  { background: var(--accent2); color: #fff; }
+
+  /* ── DONE SCREEN ── */
+  #done {
+    justify-content: center;
+    align-items: center;
+    gap: 28px;
+    padding: 40px 24px;
+  }
+
+  .done-icon {
+    font-size: 72px;
+    line-height: 1;
+  }
+
+  .done-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    letter-spacing: 6px;
+    color: var(--accent);
+    text-align: center;
+  }
+
+  .done-subtitle {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .done-stat {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 3px;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .done-again-btn {
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 4px;
+    padding: 16px 48px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .done-home-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 12px 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .home-nav { position: fixed; top: 0; left: 0; z-index: 9999; padding: 6px 14px;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px); border-bottom-right-radius: 8px; }
+  .home-nav a { color: rgba(255,255,255,0.75); text-decoration: none;
+    font-family: monospace; font-size: 0.8rem; letter-spacing: 0.06em; }
+  .home-nav a:hover { color: #fff; }
+  .studios-credit { position: fixed; bottom: 0; right: 0; z-index: 9999; padding: 5px 12px;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px); border-top-left-radius: 8px;
+    font-family: monospace; font-size: 0.7rem; color: rgba(255,255,255,0.4);
+    letter-spacing: 0.05em; pointer-events: none; }
+
+  /* ring size responsive */
+  .ring-wrap-inner {
+    width: min(300px, 78vw);
+    height: min(300px, 78vw);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+</style>
+</head>
+<body>
+  <nav class="home-nav"><a href="../index.html">&#8592; Projects</a></nav>
+  <div class="studios-credit">2357 Studios</div>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div class="screen active" id="setup">
+  <div class="setup-header">
+    <div class="app-title">Interval</div>
+    <button class="presets-btn" onclick="openPresets()">Presets</button>
+  </div>
+
+  <div class="input-panels">
+    <!-- Delay column -->
+    <div class="input-col">
+      <div class="col-label delay-label">Delay</div>
+      <div class="display-box">
+        <div class="display-time delay-time" id="delay-display">
+          <span id="delay-mm">00</span><span class="colon">:</span><span id="delay-ss">00</span>
+        </div>
+      </div>
+      <div class="numpad" id="delay-pad">
+        <button onclick="padInput('delay',1)">1</button>
+        <button onclick="padInput('delay',2)">2</button>
+        <button onclick="padInput('delay',3)">3</button>
+        <button onclick="padInput('delay',4)">4</button>
+        <button onclick="padInput('delay',5)">5</button>
+        <button onclick="padInput('delay',6)">6</button>
+        <button onclick="padInput('delay',7)">7</button>
+        <button onclick="padInput('delay',8)">8</button>
+        <button onclick="padInput('delay',9)">9</button>
+        <button onclick="padInput('delay',0)">0</button>
+        <button class="btn-del" onclick="clearInput('delay')">CLR</button>
+        <button class="btn-del" onclick="padDelete('delay')">⌫</button>
+      </div>
+    </div>
+
+    <!-- Timer column -->
+    <div class="input-col">
+      <div class="col-label timer-label">Timer</div>
+      <div class="display-box">
+        <div class="display-time timer-time" id="timer-display">
+          <span id="timer-mm">00</span><span class="colon">:</span><span id="timer-ss">00</span>
+        </div>
+      </div>
+      <div class="numpad" id="timer-pad">
+        <button onclick="padInput('timer',1)">1</button>
+        <button onclick="padInput('timer',2)">2</button>
+        <button onclick="padInput('timer',3)">3</button>
+        <button onclick="padInput('timer',4)">4</button>
+        <button onclick="padInput('timer',5)">5</button>
+        <button onclick="padInput('timer',6)">6</button>
+        <button onclick="padInput('timer',7)">7</button>
+        <button onclick="padInput('timer',8)">8</button>
+        <button onclick="padInput('timer',9)">9</button>
+        <button onclick="padInput('timer',0)">0</button>
+        <button class="btn-del" onclick="clearInput('timer')">CLR</button>
+        <button class="btn-del" onclick="padDelete('timer')">⌫</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="start-bar">
+    <button class="start-btn" id="start-btn" onclick="startTimer()" disabled>START</button>
+  </div>
+</div>
+
+<!-- ══ PRESETS OVERLAY ══ -->
+<div id="presets-overlay" onclick="overlayClick(event)">
+  <div class="presets-sheet">
+    <div class="presets-title">Presets</div>
+    <div id="presets-list"></div>
+    <button class="presets-close" onclick="closePresets()">Close</button>
+  </div>
+</div>
+
+<!-- ══ RUNNING SCREEN ══ -->
+<div class="screen" id="running">
+  <div class="running-phase" id="running-phase">DELAY</div>
+
+  <div class="progress-ring-wrap">
+    <div class="ring-wrap-inner">
+      <svg class="ring-svg" id="ring-svg">
+        <circle class="ring-track" id="ring-track"/>
+        <circle class="ring-fill" id="ring-fill"/>
+      </svg>
+      <div class="running-clock clock-delay" id="running-clock">00:00</div>
+    </div>
+  </div>
+
+  <div class="running-label" id="running-label"></div>
+
+  <div class="running-controls">
+    <button class="ctrl-btn btn-pause" id="pause-btn" onclick="togglePause()">Pause</button>
+    <button class="ctrl-btn btn-stop" onclick="stopTimer()">Stop</button>
+  </div>
+</div>
+
+<!-- ══ DONE SCREEN ══ -->
+<div class="screen" id="done">
+  <div class="done-icon">💪</div>
+  <div class="done-title">Done!</div>
+  <div class="done-subtitle" id="done-subtitle">Timer complete</div>
+  <div class="done-stat" id="done-stat"></div>
+  <button class="done-again-btn" onclick="goAgain()">Again</button>
+  <button class="done-home-btn" onclick="goHome()">Home</button>
+</div>
+
+<script>
+// ── STATE ──
+const state = {
+  delayDigits: [],
+  timerDigits: [],
+  delaySeconds: 0,
+  timerSeconds: 0,
+  running: false,
+  paused: false,
+  phase: 'delay', // 'delay' | 'active'
+  remaining: 0,
+  total: 0,
+  interval: null,
+  lastTimerSeconds: 0,
+  lastDelaySeconds: 0,
+};
+
+// ── AUDIO ──
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+
+function unlockAudio() {
+  try { const c = getAudioCtx(); if (c.state === 'suspended') c.resume(); } catch(e) {}
+}
+
+function beep(freq, duration, type='sine', vol=0.5, delay=0) {
+  const ctx = getAudioCtx();
+  const t = ctx.currentTime + delay;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t);
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+  osc.start(t);
+  osc.stop(t + duration + 0.05);
+}
+
+function playCountdownTick(n) {
+  beep(440 + (3 - n) * 40, 0.15, 'square', 0.4);
+}
+
+function playGo() {
+  beep(880, 0.08, 'square', 0.6);
+  beep(1100, 0.08, 'square', 0.6, 0.1);
+  beep(1320, 0.25, 'square', 0.7, 0.2);
+}
+
+function playWarn() {
+  beep(660, 0.12, 'square', 0.5);
+  beep(660, 0.12, 'square', 0.5, 0.2);
+}
+
+function playFinish() {
+  beep(1046, 0.1, 'sine', 0.7);
+  beep(1318, 0.1, 'sine', 0.7, 0.12);
+  beep(1568, 0.1, 'sine', 0.7, 0.24);
+  beep(2093, 0.5, 'sine', 0.8, 0.36);
+}
+
+// ── NUMBER PAD ──
+function padInput(field, digit) {
+  unlockAudio();
+  const digits = field === 'delay' ? state.delayDigits : state.timerDigits;
+  if (digits.length >= 4) return;
+  digits.push(digit);
+  updateDisplay(field);
+}
+
+function padDelete(field) {
+  const digits = field === 'delay' ? state.delayDigits : state.timerDigits;
+  digits.pop();
+  updateDisplay(field);
+}
+
+function clearInput(field) {
+  if (field === 'delay') state.delayDigits = [];
+  else state.timerDigits = [];
+  updateDisplay(field);
+}
+
+function digitsToSeconds(digits) {
+  // digits entered left-to-right fill MMSS slots
+  const padded = digits.slice(-4);
+  const str = padded.join('').padStart(4, '0');
+  const mm = parseInt(str.slice(0, 2), 10);
+  const ss = parseInt(str.slice(2, 4), 10);
+  return mm * 60 + Math.min(ss, 59);
+}
+
+function secondsToDisplay(s) {
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return { mm, ss };
+}
+
+function updateDisplay(field) {
+  const digits = field === 'delay' ? state.delayDigits : state.timerDigits;
+  const secs = digitsToSeconds(digits);
+  const { mm, ss } = secondsToDisplay(secs);
+  document.getElementById(`${field}-mm`).textContent = mm;
+  document.getElementById(`${field}-ss`).textContent = ss;
+  if (field === 'delay') state.delaySeconds = secs;
+  else state.timerSeconds = secs;
+  document.getElementById('start-btn').disabled = state.timerSeconds === 0;
+}
+
+// ── SCREENS ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── PRESETS ──
+const PRESET_KEY = 'interval_presets_v1';
+
+function loadPresets() {
+  try { return JSON.parse(localStorage.getItem(PRESET_KEY)) || defaultPresets(); }
+  catch { return defaultPresets(); }
+}
+
+function defaultPresets() {
+  return Array.from({length: 5}, (_, i) => ({ name: `Preset ${i+1}`, delay: 0, timer: 0 }));
+}
+
+function savePresets(presets) {
+  localStorage.setItem(PRESET_KEY, JSON.stringify(presets));
+}
+
+function openPresets() {
+  unlockAudio();
+  renderPresets();
+  document.getElementById('presets-overlay').classList.add('open');
+}
+
+function closePresets() {
+  document.getElementById('presets-overlay').classList.remove('open');
+}
+
+function overlayClick(e) {
+  if (e.target === document.getElementById('presets-overlay')) closePresets();
+}
+
+function renderPresets() {
+  const presets = loadPresets();
+  const list = document.getElementById('presets-list');
+  list.innerHTML = '';
+  presets.forEach((p, i) => {
+    const { mm: dm, ss: ds } = secondsToDisplay(p.delay);
+    const { mm: tm, ss: ts } = secondsToDisplay(p.timer);
+    const hasData = p.timer > 0;
+
+    const row = document.createElement('div');
+    row.className = 'preset-item';
+    row.innerHTML = `
+      <input class="preset-name-input" value="${escHtml(p.name)}" maxlength="20" data-idx="${i}" placeholder="Name…">
+      <div class="preset-times">
+        ${hasData ? `<span style="color:var(--accent3)">${dm}:${ds}</span> → <span style="color:var(--accent)">${tm}:${ts}</span>` : '<span style="color:var(--muted)">empty</span>'}
+      </div>
+      <div class="preset-actions">
+        ${hasData ? `<button class="preset-load-btn" onclick="loadPreset(${i})">Load</button>` : ''}
+        <button class="preset-save-btn" onclick="savePreset(${i})">Save</button>
+        ${hasData ? `<button class="preset-clear-btn" onclick="clearPreset(${i})">✕</button>` : ''}
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getPresetNameInput(i) {
+  return document.querySelectorAll('.preset-name-input')[i]?.value || `Preset ${i+1}`;
+}
+
+function savePreset(i) {
+  const presets = loadPresets();
+  presets[i] = {
+    name: getPresetNameInput(i),
+    delay: state.delaySeconds,
+    timer: state.timerSeconds,
+  };
+  savePresets(presets);
+  renderPresets();
+}
+
+function loadPreset(i) {
+  const presets = loadPresets();
+  const p = presets[i];
+  state.delaySeconds = p.delay;
+  state.timerSeconds = p.timer;
+  // rebuild digits from seconds
+  state.delayDigits = secondsToDigits(p.delay);
+  state.timerDigits = secondsToDigits(p.timer);
+  updateDisplay('delay');
+  updateDisplay('timer');
+  closePresets();
+}
+
+function clearPreset(i) {
+  const presets = loadPresets();
+  presets[i] = { name: getPresetNameInput(i), delay: 0, timer: 0 };
+  savePresets(presets);
+  renderPresets();
+}
+
+function secondsToDigits(s) {
+  const mm = Math.floor(s / 60);
+  const ss = s % 60;
+  const str = String(mm).padStart(2,'0') + String(ss).padStart(2,'0');
+  return str.split('').map(Number);
+}
+
+// ── PROGRESS RING ──
+function setupRing() {
+  const wrap = document.querySelector('.ring-wrap-inner');
+  const size = wrap.offsetWidth;
+  const r = size / 2 - 10;
+  const cx = size / 2;
+  const circ = 2 * Math.PI * r;
+
+  const svg = document.getElementById('ring-svg');
+  svg.setAttribute('width', size);
+  svg.setAttribute('height', size);
+
+  const track = document.getElementById('ring-track');
+  track.setAttribute('cx', cx);
+  track.setAttribute('cy', cx);
+  track.setAttribute('r', r);
+  track.setAttribute('stroke-width', 8);
+
+  const fill = document.getElementById('ring-fill');
+  fill.setAttribute('cx', cx);
+  fill.setAttribute('cy', cx);
+  fill.setAttribute('r', r);
+  fill.setAttribute('stroke-width', 8);
+  fill.setAttribute('stroke-dasharray', circ);
+  fill.setAttribute('stroke-dashoffset', 0);
+
+  return { circ };
+}
+
+let ringCirc = 0;
+
+function updateRing(remaining, total) {
+  const pct = total > 0 ? remaining / total : 0;
+  const offset = ringCirc * (1 - pct);
+  document.getElementById('ring-fill').style.strokeDashoffset = offset;
+}
+
+function setClockPhase(phase) {
+  const clock = document.getElementById('running-clock');
+  const phaseEl = document.getElementById('running-phase');
+  const fill = document.getElementById('ring-fill');
+  clock.className = 'running-clock';
+  phaseEl.className = 'running-phase';
+  if (phase === 'delay') {
+    clock.classList.add('clock-delay');
+    phaseEl.classList.add('phase-delay');
+    phaseEl.textContent = 'DELAY';
+    fill.style.stroke = 'var(--accent3)';
+  } else if (phase === 'warn') {
+    clock.classList.add('clock-warn');
+    phaseEl.classList.add('phase-warn');
+    phaseEl.textContent = 'FINISH SOON';
+    fill.style.stroke = 'var(--accent2)';
+  } else {
+    clock.classList.add('clock-active');
+    phaseEl.classList.add('phase-active');
+    phaseEl.textContent = 'ACTIVE';
+    fill.style.stroke = 'var(--accent)';
+  }
+}
+
+// ── TIMER LOGIC ──
+function startTimer() {
+  unlockAudio();
+  state.lastTimerSeconds = state.timerSeconds;
+  state.lastDelaySeconds = state.delaySeconds;
+
+  showScreen('running');
+  ringCirc = setupRing().circ;
+  document.getElementById('running-label').textContent = '';
+
+  if (state.delaySeconds > 0) {
+    beginDelay();
+  } else {
+    beginActive();
+  }
+}
+
+function beginDelay() {
+  state.phase = 'delay';
+  state.remaining = state.delaySeconds;
+  state.total = state.delaySeconds;
+  state.running = true;
+  state.paused = false;
+  setClockPhase('delay');
+  updateRing(state.remaining, state.total);
+  updateRunningClock(state.remaining);
+  scheduleDelayTick();
+}
+
+function scheduleDelayTick() {
+  clearInterval(state.interval);
+  state.interval = setInterval(() => {
+    if (state.paused) return;
+    state.remaining--;
+    updateRing(state.remaining, state.total);
+    updateRunningClock(state.remaining);
+
+    // Audible countdown for last 3 seconds of delay
+    if (state.remaining <= 3 && state.remaining > 0) {
+      playCountdownTick(state.remaining);
+    }
+
+    if (state.remaining <= 0) {
+      clearInterval(state.interval);
+      playGo();
+      setTimeout(beginActive, 300);
+    }
+  }, 1000);
+}
+
+function beginActive() {
+  state.phase = 'active';
+  state.remaining = state.timerSeconds;
+  state.total = state.timerSeconds;
+  state.running = true;
+  state.paused = false;
+  setClockPhase('active');
+  updateRing(state.remaining, state.total);
+  updateRunningClock(state.remaining);
+  document.getElementById('running-label').textContent = '';
+  scheduleActiveTick();
+}
+
+function scheduleActiveTick() {
+  clearInterval(state.interval);
+  let warnPlayed = false;
+  state.interval = setInterval(() => {
+    if (state.paused) return;
+    state.remaining--;
+    updateRing(state.remaining, state.total);
+    updateRunningClock(state.remaining);
+
+    if (state.remaining === 5 && !warnPlayed) {
+      warnPlayed = true;
+      playWarn();
+      setClockPhase('warn');
+      document.getElementById('running-label').textContent = '5 seconds left!';
+    }
+
+    if (state.remaining <= 0) {
+      clearInterval(state.interval);
+      playFinish();
+      showDone();
+    }
+  }, 1000);
+}
+
+function updateRunningClock(secs) {
+  const { mm, ss } = secondsToDisplay(Math.max(0, secs));
+  document.getElementById('running-clock').textContent = `${mm}:${ss}`;
+}
+
+function togglePause() {
+  state.paused = !state.paused;
+  document.getElementById('pause-btn').textContent = state.paused ? 'Resume' : 'Pause';
+}
+
+function stopTimer() {
+  clearInterval(state.interval);
+  state.running = false;
+  goHome();
+}
+
+function showDone() {
+  state.running = false;
+  showScreen('done');
+  const { mm, ss } = secondsToDisplay(state.lastTimerSeconds);
+  document.getElementById('done-subtitle').textContent = 'Timer complete';
+  document.getElementById('done-stat').textContent = `${mm}:${ss}`;
+}
+
+function goAgain() {
+  state.delayDigits = secondsToDigits(state.lastDelaySeconds);
+  state.timerDigits = secondsToDigits(state.lastTimerSeconds);
+  state.delaySeconds = state.lastDelaySeconds;
+  state.timerSeconds = state.lastTimerSeconds;
+  updateDisplay('delay');
+  updateDisplay('timer');
+  startTimer();
+}
+
+function goHome() {
+  clearInterval(state.interval);
+  state.running = false;
+  state.paused = false;
+  showScreen('setup');
+}
+
+// ── INIT ──
+updateDisplay('delay');
+updateDisplay('timer');
+</script>
+</body>
+</html>

@@ -88,5 +88,14 @@
     "created": "2026-04-22",
     "updated": "2026-04-22",
     "url": "projects/spinner.html"
+  },
+  {
+    "name": "Delayed Timer",
+    "description": "A clean countdown timer with a fully customizable delay — set your prep time, hit start, and let the beeps tell you when it's go time.",
+    "category": "utility",
+    "tags": ["timer", "countdown", "delay"],
+    "created": "2026-04-22",
+    "updated": "2026-04-22",
+    "url": "projects/timer-with-delay.html"
   }
 ]
