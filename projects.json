@@ -97,5 +97,14 @@
     "created": "2026-04-22",
     "updated": "2026-04-22",
     "url": "projects/timer-with-delay.html"
+  },
+  {
+    "name": "Hold-Start Timer",
+    "description": "Set a countdown, then hold the button down and let go when you're ready — the timer starts the moment you release.",
+    "category": "utility",
+    "tags": ["timer", "countdown", "reaction"],
+    "created": "2026-04-22",
+    "updated": "2026-04-22",
+    "url": "projects/hold-timer.html"
   }
 ]

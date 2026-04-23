@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hold-Start Timer | 2357 Studios</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --border: #2a2a3a;
+    --accent: #e8ff47;
+    --accent2: #ff4d6d;
+    --text: #f0f0f8;
+    --muted: #5a5a7a;
+    --pad-bg: #16161f;
+    --pad-active: #22223a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+
+  .home-nav { position: fixed; top: 0; left: 0; z-index: 9999; padding: 6px 14px;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px); border-bottom-right-radius: 8px; }
+  .home-nav a { color: rgba(255,255,255,0.75); text-decoration: none;
+    font-family: monospace; font-size: 0.8rem; letter-spacing: 0.06em; }
+  .home-nav a:hover { color: #fff; }
+  .studios-credit { position: fixed; bottom: 0; right: 0; z-index: 9999; padding: 5px 12px;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px); border-top-left-radius: 8px;
+    font-family: monospace; font-size: 0.7rem; color: rgba(255,255,255,0.4);
+    letter-spacing: 0.05em; pointer-events: none; }
+
+  .screen { display: none; flex-direction: column; height: 100%; }
+  .screen.active { display: flex; }
+
+  /* ── SETUP ── */
+  .setup-header {
+    padding: 18px 20px 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .app-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .time-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 8px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .display-time {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    letter-spacing: 6px;
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  .display-time .colon { opacity: 0.4; }
+
+  .numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    flex: 1;
+  }
+
+  .numpad button {
+    background: var(--pad-bg);
+    border: none;
+    color: var(--text);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.08s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .numpad button:active { background: var(--pad-active); }
+
+  .numpad .btn-del {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    color: var(--muted);
+  }
+
+  .start-bar {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .set-btn {
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 4px;
+    padding: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.1s, opacity 0.1s;
+  }
+  .set-btn:active { transform: scale(0.98); opacity: 0.9; }
+  .set-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ── HOLD SCREEN ── */
+  #hold { position: relative; }
+
+  .hold-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    position: relative;
+    background: var(--bg);
+    transition: background 0.2s;
+  }
+
+  .hold-area.armed { background: #0d1600; }
+
+  @keyframes pulse-ring {
+    0%   { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+    100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+  }
+
+  .hold-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  }
+
+  .hold-area.armed .hold-ring {
+    animation: pulse-ring 1s ease-out infinite;
+  }
+
+  .hold-time-preview {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 14vw, 80px);
+    letter-spacing: 6px;
+    color: var(--muted);
+    transition: color 0.2s;
+    pointer-events: none;
+  }
+
+  .hold-area.armed .hold-time-preview { color: var(--accent); }
+
+  .hold-instruction {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(24px, 6vw, 42px);
+    letter-spacing: 4px;
+    color: var(--muted);
+    transition: color 0.2s;
+    text-align: center;
+    padding: 0 16px;
+    pointer-events: none;
+  }
+
+  .hold-area.armed .hold-instruction { color: var(--accent); }
+
+  .hold-hint {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: 0.45;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .hold-area.armed .hold-hint { opacity: 0; }
+
+  .hold-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+  }
+
+  .back-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 10px 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+
+  /* ── RUNNING ── */
+  #running {
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 24px 28px;
+  }
+
+  .running-phase {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .running-phase.phase-active { color: var(--accent); }
+  .running-phase.phase-warn   { color: var(--accent2); }
+
+  .running-clock {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 14vw, 80px);
+    line-height: 0.9;
+    text-align: center;
+    letter-spacing: 6px;
+    transition: color 0.3s;
+  }
+
+  .running-clock.clock-active { color: var(--accent); }
+  .running-clock.clock-warn   { color: var(--accent2); }
+
+  .running-label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-align: center;
+    text-transform: uppercase;
+    min-height: 20px;
+  }
+
+  .progress-ring-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ring-wrap-inner {
+    width: min(300px, 78vw);
+    height: min(300px, 78vw);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .ring-svg {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(-90deg);
+    pointer-events: none;
+  }
+
+  .ring-track { fill: none; stroke: var(--border); }
+  .ring-fill {
+    fill: none;
+    stroke: var(--accent);
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s;
+  }
+
+  .running-controls {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .ctrl-btn {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.1s;
+  }
+  .ctrl-btn:active { transform: scale(0.97); opacity: 0.85; }
+
+  .btn-pause { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-stop  { background: var(--accent2); color: #fff; }
+
+  /* ── DONE ── */
+  #done {
+    justify-content: center;
+    align-items: center;
+    gap: 28px;
+    padding: 40px 24px;
+  }
+
+  .done-icon { font-size: 72px; line-height: 1; }
+
+  .done-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    letter-spacing: 6px;
+    color: var(--accent);
+    text-align: center;
+  }
+
+  .done-stat {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 3px;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .done-again-btn {
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 4px;
+    padding: 16px 48px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .done-home-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 12px 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    width: 100%;
+    max-width: 320px;
+  }
+</style>
+</head>
+<body>
+  <nav class="home-nav"><a href="../index.html">&#8592; Projects</a></nav>
+  <div class="studios-credit">2357 Studios</div>
+
+<!-- ══ SETUP ══ -->
+<div class="screen active" id="setup">
+  <div class="setup-header">
+    <div class="app-title">Timer</div>
+  </div>
+  <div class="time-display">
+    <div class="display-time">
+      <span id="timer-mm">00</span><span class="colon">:</span><span id="timer-ss">00</span>
+    </div>
+  </div>
+  <div class="numpad">
+    <button onclick="padInput(1)">1</button>
+    <button onclick="padInput(2)">2</button>
+    <button onclick="padInput(3)">3</button>
+    <button onclick="padInput(4)">4</button>
+    <button onclick="padInput(5)">5</button>
+    <button onclick="padInput(6)">6</button>
+    <button onclick="padInput(7)">7</button>
+    <button onclick="padInput(8)">8</button>
+    <button onclick="padInput(9)">9</button>
+    <button onclick="padInput(0)">0</button>
+    <button class="btn-del" onclick="clearInput()">CLR</button>
+    <button class="btn-del" onclick="padDelete()">⌫</button>
+  </div>
+  <div class="start-bar">
+    <button class="set-btn" id="set-btn" onclick="goToHold()" disabled>SET</button>
+  </div>
+</div>
+
+<!-- ══ HOLD ══ -->
+<div class="screen" id="hold">
+  <div class="hold-area" id="hold-area">
+    <div class="hold-ring"></div>
+    <div class="hold-time-preview" id="hold-time-preview">00:00</div>
+    <div class="hold-instruction" id="hold-instruction">HOLD TO ARM</div>
+    <div class="hold-hint">release to start</div>
+  </div>
+  <div class="hold-footer">
+    <button class="back-btn" onclick="goHome()">← Back</button>
+  </div>
+</div>
+
+<!-- ══ RUNNING ══ -->
+<div class="screen" id="running">
+  <div class="running-phase phase-active" id="running-phase">ACTIVE</div>
+  <div class="progress-ring-wrap">
+    <div class="ring-wrap-inner">
+      <svg class="ring-svg" id="ring-svg">
+        <circle class="ring-track" id="ring-track"/>
+        <circle class="ring-fill" id="ring-fill"/>
+      </svg>
+      <div class="running-clock clock-active" id="running-clock">00:00</div>
+    </div>
+  </div>
+  <div class="running-label" id="running-label"></div>
+  <div class="running-controls">
+    <button class="ctrl-btn btn-pause" id="pause-btn" onclick="togglePause()">Pause</button>
+    <button class="ctrl-btn btn-stop" onclick="stopTimer()">Stop</button>
+  </div>
+</div>
+
+<!-- ══ DONE ══ -->
+<div class="screen" id="done">
+  <div class="done-icon">💪</div>
+  <div class="done-title">Done!</div>
+  <div class="done-stat" id="done-stat"></div>
+  <button class="done-again-btn" onclick="goAgain()">Again</button>
+  <button class="done-home-btn" onclick="goHome()">Home</button>
+</div>
+
+<script>
+// ── STATE ──
+const state = {
+  digits: [],
+  timerSeconds: 0,
+  remaining: 0,
+  total: 0,
+  running: false,
+  paused: false,
+  interval: null,
+  lastSeconds: 0,
+  armed: false,
+};
+
+// ── AUDIO ──
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+function unlockAudio() {
+  try { const c = getAudioCtx(); if (c.state === 'suspended') c.resume(); } catch(e) {}
+}
+function beep(freq, duration, type = 'sine', vol = 0.5, delay = 0) {
+  const ctx = getAudioCtx();
+  const t = ctx.currentTime + delay;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t);
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+  osc.start(t);
+  osc.stop(t + duration + 0.05);
+}
+function playGo() {
+  beep(880, 0.08, 'square', 0.6);
+  beep(1100, 0.08, 'square', 0.6, 0.1);
+  beep(1320, 0.25, 'square', 0.7, 0.2);
+}
+function playWarn() {
+  beep(660, 0.12, 'square', 0.5);
+  beep(660, 0.12, 'square', 0.5, 0.2);
+}
+function playFinish() {
+  beep(1046, 0.1, 'sine', 0.7);
+  beep(1318, 0.1, 'sine', 0.7, 0.12);
+  beep(1568, 0.1, 'sine', 0.7, 0.24);
+  beep(2093, 0.5, 'sine', 0.8, 0.36);
+}
+
+// ── NUMBER PAD ──
+function padInput(digit) {
+  unlockAudio();
+  if (state.digits.length >= 4) return;
+  state.digits.push(digit);
+  updateDisplay();
+}
+function padDelete() {
+  state.digits.pop();
+  updateDisplay();
+}
+function clearInput() {
+  state.digits = [];
+  updateDisplay();
+}
+
+function digitsToSeconds(digits) {
+  const str = digits.join('').padStart(4, '0');
+  const mm = parseInt(str.slice(0, 2), 10);
+  const ss = parseInt(str.slice(2, 4), 10);
+  return mm * 60 + Math.min(ss, 59);
+}
+
+function secondsToDisplay(s) {
+  return {
+    mm: String(Math.floor(s / 60)).padStart(2, '0'),
+    ss: String(s % 60).padStart(2, '0'),
+  };
+}
+
+function updateDisplay() {
+  state.timerSeconds = digitsToSeconds(state.digits);
+  const { mm, ss } = secondsToDisplay(state.timerSeconds);
+  document.getElementById('timer-mm').textContent = mm;
+  document.getElementById('timer-ss').textContent = ss;
+  document.getElementById('set-btn').disabled = state.timerSeconds === 0;
+}
+
+// ── SCREENS ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── HOLD SCREEN ──
+function goToHold() {
+  const { mm, ss } = secondsToDisplay(state.timerSeconds);
+  document.getElementById('hold-time-preview').textContent = `${mm}:${ss}`;
+  showScreen('hold');
+}
+
+const holdArea = document.getElementById('hold-area');
+
+function arm() {
+  unlockAudio();
+  state.armed = true;
+  holdArea.classList.add('armed');
+  document.getElementById('hold-instruction').textContent = 'RELEASE TO START';
+}
+
+function disarm() {
+  state.armed = false;
+  holdArea.classList.remove('armed');
+  document.getElementById('hold-instruction').textContent = 'HOLD TO ARM';
+}
+
+function release() {
+  if (!state.armed) return;
+  disarm();
+  startTimer();
+}
+
+holdArea.addEventListener('mousedown',  e => { e.preventDefault(); arm(); });
+holdArea.addEventListener('mouseup',    e => { e.preventDefault(); release(); });
+holdArea.addEventListener('mouseleave', ()  => { if (state.armed) disarm(); });
+
+holdArea.addEventListener('touchstart',  e => { e.preventDefault(); arm(); },     { passive: false });
+holdArea.addEventListener('touchend',    e => { e.preventDefault(); release(); }, { passive: false });
+holdArea.addEventListener('touchcancel', ()  => { disarm(); });
+
+// ── RING ──
+let ringCirc = 0;
+
+function setupRing() {
+  const wrap = document.querySelector('.ring-wrap-inner');
+  const size = wrap.offsetWidth;
+  const r = size / 2 - 10;
+  const cx = size / 2;
+  const circ = 2 * Math.PI * r;
+
+  const svg = document.getElementById('ring-svg');
+  svg.setAttribute('width', size);
+  svg.setAttribute('height', size);
+
+  for (const id of ['ring-track', 'ring-fill']) {
+    const el = document.getElementById(id);
+    el.setAttribute('cx', cx);
+    el.setAttribute('cy', cx);
+    el.setAttribute('r', r);
+    el.setAttribute('stroke-width', 8);
+  }
+
+  const fill = document.getElementById('ring-fill');
+  fill.setAttribute('stroke-dasharray', circ);
+  fill.setAttribute('stroke-dashoffset', 0);
+
+  return circ;
+}
+
+function updateRing(remaining, total) {
+  const pct = total > 0 ? remaining / total : 0;
+  document.getElementById('ring-fill').style.strokeDashoffset = ringCirc * (1 - pct);
+}
+
+function updateRunningClock(secs) {
+  const { mm, ss } = secondsToDisplay(Math.max(0, secs));
+  document.getElementById('running-clock').textContent = `${mm}:${ss}`;
+}
+
+// ── TIMER ──
+function startTimer() {
+  state.lastSeconds = state.timerSeconds;
+  showScreen('running');
+  ringCirc = setupRing();
+
+  state.remaining = state.timerSeconds;
+  state.total = state.timerSeconds;
+  state.running = true;
+  state.paused = false;
+
+  const clock = document.getElementById('running-clock');
+  const phase = document.getElementById('running-phase');
+  clock.className = 'running-clock clock-active';
+  phase.className = 'running-phase phase-active';
+  phase.textContent = 'ACTIVE';
+  document.getElementById('running-label').textContent = '';
+  document.getElementById('pause-btn').textContent = 'Pause';
+
+  updateRing(state.remaining, state.total);
+  updateRunningClock(state.remaining);
+  playGo();
+
+  let warnPlayed = false;
+  clearInterval(state.interval);
+  state.interval = setInterval(() => {
+    if (state.paused) return;
+    state.remaining--;
+    updateRing(state.remaining, state.total);
+    updateRunningClock(state.remaining);
+
+    if (state.remaining === 5 && !warnPlayed) {
+      warnPlayed = true;
+      playWarn();
+      clock.className = 'running-clock clock-warn';
+      phase.className = 'running-phase phase-warn';
+      phase.textContent = 'FINISH SOON';
+      document.getElementById('running-label').textContent = '5 seconds left!';
+    }
+
+    if (state.remaining <= 0) {
+      clearInterval(state.interval);
+      state.running = false;
+      playFinish();
+      showDone();
+    }
+  }, 1000);
+}
+
+function togglePause() {
+  state.paused = !state.paused;
+  document.getElementById('pause-btn').textContent = state.paused ? 'Resume' : 'Pause';
+}
+
+function stopTimer() {
+  clearInterval(state.interval);
+  state.running = false;
+  goHome();
+}
+
+function showDone() {
+  showScreen('done');
+  const { mm, ss } = secondsToDisplay(state.lastSeconds);
+  document.getElementById('done-stat').textContent = `${mm}:${ss}`;
+}
+
+function goAgain() {
+  goToHold();
+}
+
+function goHome() {
+  clearInterval(state.interval);
+  state.running = false;
+  state.paused = false;
+  disarm();
+  showScreen('setup');
+}
+
+// ── INIT ──
+updateDisplay();
+</script>
+</body>
+</html>
