@@ -107,4 +107,12 @@
     "updated": "2026-04-22",
     "url": "projects/hold-timer.html"
   }
+{
+"name":"Surge",
+"description": "Roguelite game based on gravity. Gain weapons and go through waves of enemies.",
+"category": "game",
+"tags":["Roguelite","gravity","reaction"],
+"created":"2026-05-15",
+"url":"projects/surge.html"
+}
 ]
