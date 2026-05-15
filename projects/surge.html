@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SURGE — Roguelite</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--neon:#00ffe7;--hot:#ff2d6f;--warn:#ffb700;--purple:#bf5fff;--green:#39ff7a;--bg:#050810;}
+html,body{width:100%;height:100%;background:var(--bg);overflow:hidden;
+  font-family:'Orbitron',monospace;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100%;height:100%}
+#ui{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none}
+
+#hud{position:absolute;top:0;left:0;right:0;padding:12px 14px 0;
+  display:flex;justify-content:space-between;align-items:flex-start}
+.hud-block{display:flex;flex-direction:column}
+.hud-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:#3a5a7a;letter-spacing:2px}
+.hud-value{font-family:'Orbitron',monospace;font-weight:900;font-size:22px;
+  color:var(--neon);text-shadow:0 0 16px #00ffe7aa;line-height:1}
+
+#health-row{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:7px}
+.pip{width:13px;height:13px;border-radius:50%;background:var(--hot);box-shadow:0 0 8px var(--hot);transition:all 0.2s}
+.pip.empty{background:#1a2540;box-shadow:none}
+
+#weapon-bar{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);display:flex;gap:5px}
+.w-slot{width:40px;height:40px;border:1px solid #1a2540;border-radius:6px;background:#0a1020;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:16px;position:relative}
+.w-slot.active{border-color:var(--neon);box-shadow:0 0 8px #00ffe755}
+.w-slot.active.hot{border-color:var(--hot);box-shadow:0 0 8px #ff2d6f55}
+.w-slot.active.warn{border-color:var(--warn);box-shadow:0 0 8px #ffb70055}
+.w-slot.active.purple{border-color:var(--purple);box-shadow:0 0 8px #bf5fff55}
+.w-slot.active.green{border-color:var(--green);box-shadow:0 0 8px #39ff7a55}
+.w-lvl{position:absolute;bottom:2px;right:3px;font-family:'Share Tech Mono',monospace;font-size:8px;color:#4a6a8a}
+
+.screen{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;background:rgba(5,8,16,0.93);pointer-events:all}
+.screen.hidden{display:none}
+.logo{font-weight:900;font-size:clamp(50px,13vw,76px);color:var(--neon);letter-spacing:6px;
+  text-shadow:0 0 40px #00ffe7,0 0 80px #00ffe755;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{text-shadow:0 0 40px #00ffe7,0 0 80px #00ffe755}
+  50%{text-shadow:0 0 60px #00ffe7,0 0 120px #00ffe799}}
+.subtitle{font-family:'Share Tech Mono',monospace;font-size:11px;color:#3a5a7a;letter-spacing:4px;margin-top:6px}
+.start-btn{margin-top:40px;padding:14px 44px;background:transparent;border:2px solid var(--neon);
+  color:var(--neon);font-family:'Orbitron',monospace;font-weight:700;font-size:14px;letter-spacing:4px;
+  cursor:pointer;pointer-events:all;box-shadow:0 0 20px #00ffe755,inset 0 0 20px #00ffe711;
+  -webkit-tap-highlight-color:transparent;transition:all 0.15s}
+.start-btn:active{background:#00ffe722;transform:scale(0.97)}
+.instructions{margin-top:26px;text-align:center;font-family:'Share Tech Mono',monospace;
+  font-size:11px;color:#2a4060;line-height:2.2;letter-spacing:1px}
+.instructions span{color:#4a7090}
+
+#pickup-toast{position:absolute;top:72px;left:50%;transform:translateX(-50%);
+  font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:2px;
+  pointer-events:none;opacity:0;white-space:nowrap;padding:5px 14px;
+  border:1px solid currentColor;background:rgba(5,8,16,0.85)}
+#pickup-toast.show{animation:toastAnim 1.6s ease forwards}
+@keyframes toastAnim{0%{opacity:0;transform:translateX(-50%) translateY(-6px)}
+  15%{opacity:1;transform:translateX(-50%) translateY(0)}75%{opacity:1}100%{opacity:0}}
+
+.go-title{font-size:clamp(34px,9vw,56px);font-weight:900;color:var(--hot);letter-spacing:4px;text-shadow:0 0 40px #ff2d6f}
+.go-score{margin-top:18px;font-family:'Share Tech Mono',monospace;font-size:12px;color:#3a5a7a;letter-spacing:3px}
+.go-score-val{font-size:clamp(38px,10vw,62px);font-weight:900;color:var(--neon);text-shadow:0 0 20px #00ffe7aa}
+.go-best{margin-top:5px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--warn)}
+.go-weapons{margin-top:14px;display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.go-w{font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 9px;border:1px solid #1a2540;border-radius:4px}
+
+#wave-flash{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);
+  font-size:18px;font-weight:700;color:var(--warn);text-shadow:0 0 20px var(--warn);
+  letter-spacing:5px;pointer-events:none;opacity:0}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="ui">
+  <div id="hud" class="hidden">
+    <div class="hud-block">
+      <span class="hud-label">Score</span>
+      <span class="hud-value" id="score-display">0</span>
+    </div>
+    <div class="hud-block" style="align-items:center">
+      <span class="hud-label">Wave</span>
+      <span class="hud-value" id="wave-display" style="font-size:16px;color:var(--hot);text-shadow:0 0 12px #ff2d6faa">W1 0/12</span>
+    </div>
+    <div class="hud-block" style="align-items:flex-end">
+      <span class="hud-label">Best</span>
+      <span class="hud-value" id="best-display" style="font-size:16px">0</span>
+    </div>
+  </div>
+  <div id="weapon-bar" class="hidden"></div>
+  <div id="health-row" class="hidden"></div>
+  <div id="pickup-toast"></div>
+  <div id="wave-flash"></div>
+
+  <div class="screen" id="start-screen">
+    <div class="logo">SURGE</div>
+    <div class="subtitle">Swipe · Survive · Upgrade</div>
+    <button class="start-btn" id="start-btn">PLAY</button>
+    <div class="instructions">
+      <span>SWIPE</span> to dash · Weapons fire automatically<br>
+      Kill enemies to collect <span>weapon drops</span><br>
+      Clear the wave to <span>magnetize all drops</span>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="gameover-screen">
+    <div class="go-title">DEAD</div>
+    <div class="go-score">SCORE</div>
+    <div class="go-score-val" id="go-score-val">0</div>
+    <div class="go-best" id="go-best"></div>
+    <div class="go-weapons" id="go-weapons"></div>
+    <button class="start-btn" id="retry-btn" style="margin-top:26px">RETRY</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, SCALE;
+
+// World is always fully visible — scaled to fit the screen
+const WW = 1600, WH = 2200;
+function worldOffsetX(){ return (W - WW*SCALE)/2; }
+function worldOffsetY(){ return (H - WH*SCALE)/2; }
+function wx(x){ return worldOffsetX() + x*SCALE; }
+function wy(y){ return worldOffsetY() + y*SCALE; }
+
+function resize(){
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  SCALE = Math.min(W/WW, H/WH) * 0.96;
+}
+resize(); window.addEventListener('resize', resize);
+
+// ─── WEAPON DEFINITIONS ───────────────────────────────────────────────────
+const WEAPON_DEFS = {
+  laser:{name:'Laser',icon:'⚡',color:'#00ffe7',accentClass:'active',
+    fire(p,lvl){
+      const n=nearestEnemy(p.x,p.y); if(!n) return;
+      const{dx,dy}=dirTo(p.x,p.y,n.x,n.y);
+      const spd=10+lvl, count=lvl>=4?3:lvl>=2?2:1;
+      for(let i=0;i<count;i++){
+        const a=Math.atan2(dy,dx)+(i-(count-1)/2)*0.18;
+        bullets.push({x:p.x,y:p.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
+          dmg:1+Math.floor(lvl/2),radius:5,color:'#00ffe7',glow:'#00ffe7',life:120,homing:false,explodes:false});
+      }
+    }, cooldown:lvl=>Math.max(8,22-lvl*2)},
+
+  shotgun:{name:'Shotgun',icon:'🔥',color:'#ff2d6f',accentClass:'hot',
+    fire(p,lvl){
+      const n=nearestEnemy(p.x,p.y); if(!n) return;
+      const{dx,dy}=dirTo(p.x,p.y,n.x,n.y);
+      const base=Math.atan2(dy,dx), pellets=4+lvl, spread=0.55-lvl*0.03;
+      for(let i=0;i<pellets;i++){
+        const a=base+(i/(pellets-1)-0.5)*spread*2+(Math.random()-0.5)*0.08;
+        bullets.push({x:p.x,y:p.y,vx:Math.cos(a)*(7+Math.random()*3),vy:Math.sin(a)*(7+Math.random()*3),
+          dmg:1,radius:4,color:'#ff2d6f',glow:'#ff2d6f',life:80,homing:false,explodes:false});
+      }
+    }, cooldown:lvl=>Math.max(18,45-lvl*3)},
+
+  orb:{name:'Plasma Orb',icon:'🌀',color:'#bf5fff',accentClass:'purple',
+    fire(){}, cooldown:()=>999999},
+
+  missile:{name:'Missile',icon:'🚀',color:'#ffb700',accentClass:'warn',
+    fire(p,lvl){
+      const n=nearestEnemy(p.x,p.y); if(!n) return;
+      const count=lvl>=3?2:1;
+      for(let i=0;i<count;i++){
+        bullets.push({x:p.x+(i-0.5)*40,y:p.y,vx:(Math.random()-0.5)*3,vy:-3,
+          dmg:2+lvl,radius:7,color:'#ffb700',glow:'#ffb700',life:180,
+          homing:true,target:n,explodes:true,explodeRadius:40+lvl*10});
+      }
+    }, cooldown:lvl=>Math.max(25,70-lvl*5)},
+
+  blade:{name:'Blade Ring',icon:'⚔️',color:'#39ff7a',accentClass:'green',
+    fire(){}, cooldown:()=>999999}
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────
+let state='start', frame=0, score=0, kills=0, invincible=0;
+let best=parseInt(localStorage.getItem('surge2_best')||'0');
+let difficulty=1, lastTime=0;
+let waveNum=1, waveKillQuota=0, waveKillCount=0, waveSpawned=0, betweenTimer=0;
+const BETWEEN_FRAMES=90;
+function waveQuota(w){return 8+w*4;}
+function waveDiff(w){return 1+(w-1)*0.25;}
+
+const player={x:WW/2,y:WH/2,radius:18,targetX:WW/2,targetY:WH/2,
+  trail:[],glowPhase:0,dashing:false,dashFrames:0};
+const MAX_HP=5; let hp=MAX_HP;
+let weapons={};
+let enemies=[],bullets=[],particles=[],drops=[],rings=[];
+let orbAngle=0, bladeAngle=0;
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+function dirTo(x1,y1,x2,y2){
+  const dx=x2-x1,dy=y2-y1,d=Math.sqrt(dx*dx+dy*dy)||1;
+  return{dx:dx/d,dy:dy/d,d};
+}
+function nearestEnemy(x,y){
+  let b=null,bd=Infinity;
+  for(const e of enemies){const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;b=e;}}
+  return b;
+}
+function spawnParticle(x,y,color,r,vx,vy,life){
+  particles.push({x,y,color,radius:r,vx,vy,life,maxLife:life});
+}
+function rand(a,b){return a+Math.random()*(b-a);}
+
+// ─── UI ───────────────────────────────────────────────────────────────────
+function updateWeaponBar(){
+  const bar=document.getElementById('weapon-bar'); bar.innerHTML='';
+  for(const[id,w] of Object.entries(weapons)){
+    const def=WEAPON_DEFS[id],div=document.createElement('div');
+    div.className=`w-slot active ${def.accentClass}`;
+    div.innerHTML=`${def.icon}<span class="w-lvl">Lv${w.level}</span>`;
+    bar.appendChild(div);
+  }
+}
+function updateHealthPips(){
+  const row=document.getElementById('health-row'); row.innerHTML='';
+  for(let i=0;i<MAX_HP;i++){
+    const p=document.createElement('div');
+    p.className='pip'+(i>=hp?' empty':'');
+    row.appendChild(p);
+  }
+}
+function showPickupToast(text,color){
+  const el=document.getElementById('pickup-toast');
+  el.textContent=text;el.style.color=color;el.style.borderColor=color;
+  el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
+}
+function flashWave(n){
+  const el=document.getElementById('wave-flash');
+  el.textContent='WAVE '+n;el.style.opacity='1';el.style.transition='none';
+  setTimeout(()=>{el.style.transition='opacity 1.2s';el.style.opacity='0';},900);
+}
+function updateWaveHUD(){
+  document.getElementById('wave-display').textContent=`W${waveNum} ${waveKillCount}/${waveKillQuota}`;
+}
+
+// ─── LIFECYCLE ────────────────────────────────────────────────────────────
+function startGame(){
+  frame=0;score=0;kills=0;hp=MAX_HP;difficulty=1;invincible=0;
+  enemies=[];bullets=[];particles=[];drops=[];rings=[];
+  weapons={};orbAngle=0;bladeAngle=0;
+  waveNum=1;waveKillCount=0;waveSpawned=0;betweenTimer=0;
+  waveKillQuota=waveQuota(1);
+  player.x=player.targetX=WW/2; player.y=player.targetY=WH/2;
+  player.trail=[];player.dashing=false;player.glowPhase=0;
+  giveWeapon('laser');
+  updateWeaponBar();updateHealthPips();updateWaveHUD();
+  document.getElementById('score-display').textContent='0';
+  document.getElementById('best-display').textContent=best;
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('weapon-bar').classList.remove('hidden');
+  document.getElementById('health-row').classList.remove('hidden');
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('gameover-screen').classList.add('hidden');
+  flashWave(1);
+  state='playing';
+}
+
+function giveWeapon(id){
+  if(weapons[id]){weapons[id].level=Math.min(5,weapons[id].level+1);}
+  else{weapons[id]={level:1,cooldownTimer:0};}
+  updateWeaponBar();
+}
+
+function gameOver(){
+  state='dying';
+  enemies=[];bullets=[];rings=[];
+  for(let i=0;i<40;i++)
+    spawnParticle(player.x,player.y,'#ff2d6f',rand(2,6),(Math.random()-0.5)*14,(Math.random()-0.5)*14,60);
+  for(const d of drops){d.magnetizing=true;d.life=9999;}
+}
+
+function showGameOverScreen(){
+  state='dead';
+  if(score>best){best=score;localStorage.setItem('surge2_best',best);}
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('weapon-bar').classList.add('hidden');
+  document.getElementById('health-row').classList.add('hidden');
+  document.getElementById('go-score-val').textContent=score;
+  document.getElementById('go-best').textContent=score===best&&score>0?'★ NEW BEST ★':'BEST: '+best;
+  const wc=document.getElementById('go-weapons');wc.innerHTML='';
+  for(const[id,w] of Object.entries(weapons)){
+    const def=WEAPON_DEFS[id],d=document.createElement('div');
+    d.className='go-w';d.style.borderColor=def.color;d.style.color=def.color;
+    d.textContent=`${def.icon} ${def.name} Lv${w.level}`;wc.appendChild(d);
+  }
+  document.getElementById('gameover-screen').classList.remove('hidden');
+}
+
+function startBetweenWaves(){
+  state='between-waves';
+  bullets=[];rings=[];
+  for(const d of drops){d.magnetizing=true;d.life=9999;}
+  betweenTimer=0;
+}
+
+function startNextWave(){
+  waveNum++;waveKillCount=0;waveSpawned=0;
+  waveKillQuota=waveQuota(waveNum);difficulty=waveDiff(waveNum);
+  enemies=[];drops=[];
+  flashWave(waveNum);updateWaveHUD();
+  state='playing';
+}
+
+// ─── ENEMIES ──────────────────────────────────────────────────────────────
+function spawnEnemy(){
+  const edge=Math.floor(Math.random()*4);
+  let sx,sy;
+  if(edge===0){sx=rand(0,WW);sy=-30;}
+  else if(edge===1){sx=WW+30;sy=rand(0,WH);}
+  else if(edge===2){sx=rand(0,WW);sy=WH+30;}
+  else{sx=-30;sy=rand(0,WH);}
+  const roll=Math.random(),spd=rand(0.8,1.8)*(1+difficulty*0.12);
+  let e;
+  if(roll<0.45){
+    e={type:'grunt',x:sx,y:sy,hp:2+Math.floor(difficulty*0.5),maxHp:0,
+      radius:12,color:'#00ffe7',speed:spd,vx:0,vy:0,homing:true,dropChance:0.55};
+  }else if(roll<0.72){
+    e={type:'brute',x:sx,y:sy,hp:6+Math.floor(difficulty),maxHp:0,
+      radius:20,color:'#ff2d6f',speed:spd*0.6,vx:0,vy:0,homing:true,dropChance:0.8};
+  }else if(roll<0.88){
+    const{dx,dy}=dirTo(sx,sy,WW/2+rand(-200,200),WH/2+rand(-200,200));
+    e={type:'bolt',x:sx,y:sy,hp:1,maxHp:0,radius:8,color:'#ffb700',
+      speed:0,vx:dx*(spd*1.8),vy:dy*(spd*1.8),homing:false,dropChance:0.3};
+  }else{
+    e={type:'emitter',x:sx,y:sy,hp:4+Math.floor(difficulty),maxHp:0,
+      radius:16,color:'#bf5fff',speed:spd*0.3,vx:0,vy:0,homing:true,
+      dropChance:0.9,emitTimer:0,emitRate:90};
+  }
+  e.maxHp=e.hp; enemies.push(e);
+}
+
+// ─── DROPS ────────────────────────────────────────────────────────────────
+const DROP_POOL=['laser','shotgun','orb','missile','blade'];
+function spawnDrop(x,y,chance){
+  if(Math.random()>chance) return;
+  const existing=Object.keys(weapons);
+  const pool=existing.length>=5?existing:[...existing,...DROP_POOL.filter(d=>!existing.includes(d)),...existing];
+  const id=pool[Math.floor(Math.random()*pool.length)];
+  const def=WEAPON_DEFS[id];
+  drops.push({x,y,id,color:def.color,icon:def.icon,radius:14,life:480,
+    bobPhase:Math.random()*Math.PI*2,vy:rand(-2,-4),vx:rand(-1,1),magnetizing:false});
+}
+
+// ─── SHARED HELPERS ───────────────────────────────────────────────────────
+function magnetizeDrops(){
+  for(let i=drops.length-1;i>=0;i--){
+    const d=drops[i];
+    const dx=player.x-d.x,dy=player.y-d.y,dist=Math.sqrt(dx*dx+dy*dy)||1;
+    const spd=Math.min(20,130/dist+4);
+    d.x+=dx/dist*spd; d.y+=dy/dist*spd; d.bobPhase+=0.12;
+    if(dist<player.radius+d.radius+4){
+      const existed=!!weapons[d.id]; giveWeapon(d.id);
+      const def=WEAPON_DEFS[d.id];
+      showPickupToast(existed?`${def.icon} ${def.name} → Lv${weapons[d.id].level}`:`${def.icon} ${def.name} acquired!`,def.color);
+      drops.splice(i,1);
+    }
+  }
+}
+function tickParticles(){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vx*=0.92;p.vy*=0.92;p.life--;
+    if(p.life<=0) particles.splice(i,1);
+  }
+}
+function hitEnemy(e,idx,color){
+  if(e.hp<=0){
+    kills++;waveKillCount++;
+    for(let p=0;p<12;p++)
+      spawnParticle(e.x,e.y,color,rand(2,5),(Math.random()-0.5)*8,(Math.random()-0.5)*8,35);
+    spawnDrop(e.x,e.y,e.dropChance);
+    enemies.splice(idx,1);
+  }
+}
+function explode(x,y,radius,dmg){
+  for(let p=0;p<20;p++)
+    spawnParticle(x,y,'#ffb700',rand(3,7),(Math.random()-0.5)*12,(Math.random()-0.5)*12,45);
+  for(let j=enemies.length-1;j>=0;j--){
+    const e=enemies[j];
+    if(Math.sqrt((e.x-x)**2+(e.y-y)**2)<radius){e.hp-=dmg;hitEnemy(e,j,'#ffb700');}
+  }
+  rings.push({x,y,radius:10,maxRadius:radius,growSpeed:6,color:'#ffb700',life:30,noDmg:true});
+}
+
+// ─── UPDATE ───────────────────────────────────────────────────────────────
+function update(){
+  if(state==='dead'||state==='start') return;
+
+  if(state==='dying'){
+    magnetizeDrops(); tickParticles();
+    player.glowPhase+=0.07;
+    player.trail.unshift({x:player.x,y:player.y});
+    if(player.trail.length>20) player.trail.pop();
+    if(drops.length===0) showGameOverScreen();
+    return;
+  }
+
+  if(state==='between-waves'){
+    magnetizeDrops(); tickParticles();
+    player.glowPhase+=0.07;
+    player.trail.unshift({x:player.x,y:player.y});
+    if(player.trail.length>20) player.trail.pop();
+    if(weapons.orb) orbAngle+=0.04+weapons.orb.level*0.005;
+    if(weapons.blade) bladeAngle+=0.08+weapons.blade.level*0.01;
+    if(drops.length===0){betweenTimer++;if(betweenTimer>=BETWEEN_FRAMES) startNextWave();}
+    return;
+  }
+
+  // ── PLAYING ────────────────────────────────────────────────────────────
+  frame++;
+  score=kills*10+(waveNum-1)*50;
+  document.getElementById('score-display').textContent=score;
+  updateWaveHUD();
+
+  // Player movement
+  const lerpSpeed=player.dashing?0.3:0.13;
+  player.x+=(player.targetX-player.x)*lerpSpeed;
+  player.y+=(player.targetY-player.y)*lerpSpeed;
+  if(player.dashFrames>0) player.dashFrames--; else player.dashing=false;
+  player.glowPhase+=0.07;
+  player.trail.unshift({x:player.x,y:player.y});
+  if(player.trail.length>20) player.trail.pop();
+  if(invincible>0) invincible--;
+
+  // Weapons fire
+  for(const[id,w] of Object.entries(weapons)){
+    w.cooldownTimer--;
+    if(id==='orb'||id==='blade') continue;
+    if(w.cooldownTimer<=0&&enemies.length>0){
+      WEAPON_DEFS[id].fire(player,w.level);
+      w.cooldownTimer=WEAPON_DEFS[id].cooldown(w.level);
+    }
+  }
+
+  // Orbs
+  if(weapons.orb){
+    const lvl=weapons.orb.level,count=1+Math.floor(lvl/1.5),orbitR=55+lvl*8;
+    orbAngle+=0.04+lvl*0.005;
+    for(let i=enemies.length-1;i>=0;i--){
+      const e=enemies[i];
+      for(let o=0;o<count;o++){
+        const a=orbAngle+o*(Math.PI*2/count);
+        const ox=player.x+Math.cos(a)*orbitR,oy=player.y+Math.sin(a)*orbitR;
+        if(Math.sqrt((e.x-ox)**2+(e.y-oy)**2)<e.radius+10){e.hp-=0.15;hitEnemy(e,i,'#bf5fff');break;}
+      }
+    }
+  }
+
+  // Blades
+  if(weapons.blade){
+    const lvl=weapons.blade.level,count=2+lvl,bladeR=40+lvl*6;
+    bladeAngle+=0.08+lvl*0.01;
+    for(let i=enemies.length-1;i>=0;i--){
+      const e=enemies[i];
+      for(let b=0;b<count;b++){
+ 
